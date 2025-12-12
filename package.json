@@ -1,0 +1,20 @@
+{
+  "name": "second-brain-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix Brainly\" \"npm run dev --prefix Brainly-frontend\"",
+    "backend": "npm run dev --prefix Brainly",
+    "frontend": "npm run dev --prefix Brainly-frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.24"
+  }
+}
