@@ -6,7 +6,7 @@ Brainly-frontend/public
 Brainly/dist
 Brainly/Advance-Brainly.txt
 Brainly/*.txt
-
+*.txt
 Brainly/node_modules
 Brainly/.env
 
