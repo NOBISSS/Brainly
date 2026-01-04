@@ -31,7 +31,7 @@ const initialState:LinkState={
 export const fetchLinksByWorkspace=createAsyncThunk("links/fetchLinks",async(workspaceId:string,{rejectWithValue})=>{
     try{
         const res=await axios.get(`${BACKEND_URL}api/links/${workspaceId}`,{
-            headers:{Authorization:`Bearer ${localStorage.getItem('token')}`}
+            headers:{Authorization:`Bearer ${localStorage.getItem('token')}`,}
         })
         return {workspaceId,links:res.data.data};
     }catch(error:any){

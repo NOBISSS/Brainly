@@ -1,13 +1,12 @@
 import { Request, Response } from "express"
-import Link from "../Models/linkModel";
-import Workspace from "../Models/workspaceModel"
-import { AuthRequest } from "../Middlewares/authMiddleware";
+import Link from "../models/linkModel";
+import Workspace from "../models/workspaceModel"
 import ogs from "open-graph-scraper";
 
 const DEFAULT_THUBNAIL = "https://images.unsplash.com/photo-1764866558045-ee48abd52732?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
 //CREATE LINK
-export const createLink = async (req: AuthRequest, res: Response) => {
+export const createLink = async (req: Request, res: Response) => {
     try {
         const { title, url, category, tags, workspace } = req.body;
         const userId = req.user._id;
@@ -61,7 +60,7 @@ export const createLink = async (req: AuthRequest, res: Response) => {
 }
 
 //GET LINK
-export const getLinks = async (req: AuthRequest, res: Response) => {
+export const getLinks = async (req: Request, res: Response) => {
     try {
         const { workspaceId } = req.params;
         const userId = req.user._id;
@@ -93,7 +92,7 @@ export const getLinks = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const deleteLink = async (req: AuthRequest, res: Response) => {
+export const deleteLink = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const userId=req.user._id;
@@ -123,7 +122,7 @@ export const deleteLink = async (req: AuthRequest, res: Response) => {
 }
 
 
-// export const moveLinkToWorkspace = async (req: AuthRequest, res: Response) => {
+// export const moveLinkToWorkspace = async (req: Request, res: Response) => {
 //     try {
 //         const { linkId, workspaceId } = req.body;
 //         const userId=req.user._id;

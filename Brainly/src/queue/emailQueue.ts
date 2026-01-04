@@ -1,7 +1,7 @@
 import {Queue,Worker} from "bullmq";
-import redis from "../Config/redis";
-import { mailSender } from "../Utils/MailSender";
-import {OtpTemp} from "../mail/templates/OTPTemplate";
+import redis from "../config/redis";
+import { mailSender } from "../utils/mailSender";
+import {otpTemp} from "../mail/templates/otpTemplate";
 
 export const emailQueue=new Queue("email-queue",{
     connection:redis,
@@ -17,7 +17,7 @@ new Worker(
     "email-queue",
     async(job)=>{
         const {email,otp}=job.data;
-        const html=OtpTemp(otp);
+        const html=otpTemp(otp);
         await mailSender(email,"Your Brainly OTP Code",html);
         console.log(`OTP email sent to ${email}`);
     },

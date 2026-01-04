@@ -6,9 +6,9 @@ import {
     addCollaborator,
     removeCollaborator,
     deleteWorkspace
- } from "../Controllers/workspaceController";
+ } from "../controllers/workspaceController";
 
-import { protect } from "../Middlewares/authMiddleware";
+import { protect } from "../middlewares/authMiddleware";
 
 const router=express.Router();
 

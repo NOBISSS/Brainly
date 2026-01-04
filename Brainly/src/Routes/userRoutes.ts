@@ -1,10 +1,16 @@
 import express from "express";
-import { registerUser,loginUser,getProfile, sendOTP } from "../Controllers/userController";
-import { protect } from "../Middlewares/authMiddleware";
+import { registerUser,loginUser,getProfile, sendOTP } from "../controllers/userController";
+import { protect } from "../middlewares/authMiddleware";
 //import passport from "passport";
-import { ensureAuthenticated } from "../Middlewares/ensureAuthenticated";
+import { ensureAuthenticated } from "../middlewares/ensureAuthenticated";
 
 const router=express.Router();
+
+
+router.get("/test", (req, res) => {
+  res.send("USER ROUTE WORKS");
+});
+
 
 router.post("/sendotp",sendOTP);
 router.post("/register",registerUser);  
@@ -13,6 +19,8 @@ router.post("/register",registerUser);
 // router.get('/auth/google/callback',passport.authenticate('google',{failureRedirect:'/'}),(req,res)=>{
 //     res.redirect('/');
 // });
+
+
 
 router.get('/profile',(req,res)=>{
     res.send("This is your profile page");

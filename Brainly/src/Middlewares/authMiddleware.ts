@@ -1,90 +1,69 @@
-import {Request,Response,NextFunction} from "express";
+import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import User from "../Models/userModel";
-import { env } from "process";
+import redis from "../config/redis";
+import User from "../models/userModel";
 
-export interface AuthRequest extends Request{
-    user?:{
-        _id:string;
-        name:string;
-        email:string;
-    };
-}
+const JWT_SECRET = process.env.JWT_SECRET || "BRAINLY";
 
-const JWT_SECRET=env.JWT_SECRET || "BRAINLY";
-if(!JWT_SECRET){
-    console.error("FATAL ERROR:JWT_SECRET is not defined in .env");
-    process.exit(1);
-}
+export const protect = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  let token: string | undefined;
 
-import redis from "../Config/redis";
+  if (req.headers.authorization?.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
+  }
 
-export const protect=async(
-    req:AuthRequest,
-    res:Response,
-    next:NextFunction
-)=>{
-    let token:string | undefined;
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Not authorized, no token",
+    });
+  }
 
-    //1.Checking for token in headers
-    if(
-        req.headers.authorization &&
-        req.headers.authorization.startsWith("Bearer")
-    ){
-        console.log("CONIDTION TRUEE");
-        console.log(req.headers.authorization.split(" ")[1]);
-        token=req.headers.authorization.split(" ")[1];
+  try {
+    const isBlacklisted = await redis.get(`blacklist:${token}`);
+    if (isBlacklisted) {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired or invalid",
+      });
     }
 
-    //2.IT IS OPTIONAL BUT CHECKING
-    else if(req.cookies?.token){
-        console.log("COKKIE TRUEE");
-        token=req.cookies.token;
-    }
-    console.log("TOKEN FOUND:",token);
-    if(!token){
-        return res.status(401).json({
-            success:false,
-            message:"Not Authorized,no token",
-        });
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User no longer exists",
+      });
     }
 
-    try{
-        const isBlacklisted=await redis.get(`blacklist:${token}`);
-        if(isBlacklisted){
-            return res.status(401).json({
-                success:false,
-                message:"Token Expired or invalid",
-            });
-        }
-        
-        const decoded=jwt.verify(token,JWT_SECRET) as {id:string};
-
-        const user=await User.findById(decoded.id).select("-password");
-        if(!user){
-            return res.status(401).json({
-                success:false,
-                message:"User no longer exists"
-            })
-        }
-
-        req.user=user;
-        next();
-    }catch(error){
-        console.error("Auth Middlware Error:",error);
-        return res.status(401).json({
-            success:false,
-            message:"Not Authorized,token failed",
-        });
-    }
+    req.user = user; // ✅ NOW VALID
+    next();
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      message: "Not authorized, token failed",
+    });
+  }
 };
 
-export const logout=async(req:AuthRequest,res:Response)=>{
-    const token=req.headers.authorization?.split(" ")[1];
+export const logout = async (req: Request, res: Response) => {
+  const token = req.headers.authorization?.split(" ")[1];
 
-    if(token){
-        await redis.set(`blacklist:${token}`,"true","EX",7*24*60*60);
-    }
+  if (token) {
+    await redis.set(`blacklist:${token}`, "true", "EX", 7 * 24 * 60 * 60);
+  }
 
-    res.status(200).json({success:true,message:"Logged Out Successfully"});
-}
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+};
+

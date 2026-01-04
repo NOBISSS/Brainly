@@ -1,8 +1,9 @@
 import { Response } from "express";
-import Workspace from "../Models/workspaceModel";
-import Link from "../Models/linkModel";
-import { AuthRequest } from "../Middlewares/authMiddleware";
-import User from "../Models/userModel";
+import Workspace from "../models/workspaceModel";
+import Link from "../models/linkModel";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import User from "../models/userModel";
+import { Types } from "mongoose";
 
 //create Workspace
 export const createWorkspace = async (req: AuthRequest, res: Response) => {
@@ -66,12 +67,6 @@ export const getWorkspaceById = async (req: AuthRequest, res: Response) => {
     }
 }
 
-
-
-
-
-
-
 //Add Collaborator
 export const addCollaborator = async (req: AuthRequest, res: Response) => {
     try {
@@ -86,7 +81,7 @@ export const addCollaborator = async (req: AuthRequest, res: Response) => {
         }
 
 
-        const user= await User.findOne({ email })
+        const user=await User.findOne({ email })
         if (!user) {
             return res.status(404).json({
                 success:false,
@@ -94,11 +89,11 @@ export const addCollaborator = async (req: AuthRequest, res: Response) => {
             })
         }
 
-        if(workspace.members.includes(user._id)){
+        if(workspace.members.includes(user._id as Types.ObjectId)){
             return res.status(400).json({success:false,message:"User Already in Workspace"});
         }
 
-        workspace.members.push(user._id);
+        workspace.members.push(user._id as Types.ObjectId);
         await workspace.save();
 
         res.status(200).json({success:true, message: "Collaborator Added",data:workspace });
@@ -145,10 +140,8 @@ export const deleteWorkspace = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
         //check workspace existance and delet
-        const workspace=await Workspace.findOne(id);
+        const workspace=await Workspace.findById(id);
         if(!workspace) return res.status(404).json({success:false,message:"Workspace not found"});
-
-        
         await Workspace.findByIdAndDelete(id);
 
         return res.status(200).json({

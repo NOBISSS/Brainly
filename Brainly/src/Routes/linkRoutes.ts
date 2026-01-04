@@ -1,6 +1,6 @@
 import express from "express";
-import { protect } from "../Middlewares/authMiddleware";
-import { createLink, getLinks,deleteLink } from "../Controllers/linkController";
+import { protect } from "../middlewares/authMiddleware";
+import { createLink, getLinks,deleteLink } from "../controllers/linkController";
 
 const router=express.Router();
 

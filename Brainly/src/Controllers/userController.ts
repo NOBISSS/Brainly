@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import User from "../Models/userModel"
-import { AuthRequest } from "../Middlewares/authMiddleware";
-import { GenerateToken } from "../Utils/generateToken";
-import OTPMODAL from "../Models/OTP-MODAL";
-import userModel from "../Models/userModel";
+import User from "../models/userModel"
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { GenerateToken } from "../utils/generateToken";
+import OTPMODAL from "../models/OTP-MODAL";
+import userModel from "../models/userModel";
 import otpGenerator from "otp-generator";
 import { emailQueue } from "../queue/emailQueue";
 
@@ -30,6 +30,7 @@ export const sendOTP = async (req: Request, res: Response) => {
             });
         }
 
+        //sending otp here
         let otp = otpGenerator.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
 
         await OTPMODAL.deleteMany({ email });
@@ -58,8 +59,9 @@ export const registerUser = async (req: Request, res: Response) => {
         if (!name || !email || !password || !otp)
             return res.status(400).json({ success: false, message: "All Fields are required" });
 
+        //test here
         const recentOTP = await OTPMODAL.find({ email }).sort({ createdAt: -1 }).limit(1);
-        if (!recentOTP.length || recentOTP[0].otp !== 0) {
+        if (!recentOTP.length || recentOTP[0].otp) {
             return res.status(400).json({ success: false, message: "Invalid or Expired OTP" });
         }
 
@@ -103,7 +105,6 @@ export const loginUser = async (req: Request, res: Response) => {
 
         res.cookie("token",token,{
             httpOnly:true,
-            secure:"production",
             sameSite:"strict",
             maxAge:7*24*60*60*1000
         })

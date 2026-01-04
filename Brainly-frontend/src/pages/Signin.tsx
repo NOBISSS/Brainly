@@ -22,7 +22,7 @@ export function Signin(){
           const response= await axios.post(BACKEND_URL+"api/v1/users/login",{
                 email,
                 password
-            })
+            },{withCredentials:true})
             console.log("SIGNIN RESPONSE:: ",response)
             const jwt=response.data.data.token;
             localStorage.setItem("token",jwt);

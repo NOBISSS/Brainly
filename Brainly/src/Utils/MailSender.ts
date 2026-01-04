@@ -6,7 +6,7 @@ interface emailProps{
     body:string;
 }
 
-export const mailSender=async(email,title,body)=>{
+export const mailSender=async({email,title,body}:emailProps)=>{
     try{
         console.log("ENTERED IN MAILSENDER API");
         const transportor=nodemailer.createTransport({
