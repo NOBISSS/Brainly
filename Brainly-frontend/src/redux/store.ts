@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import linkReducer from "./slices/linkSlice";
 import workspaceReducer from "./slices/workspaceSlice";
 import userReducer from "./slices/userSlice";
+
 export const store=configureStore({
     reducer:{
         links:linkReducer,
@@ -10,10 +11,7 @@ export const store=configureStore({
     },
     middleware:(getDefaultMiddleware)=>
         getDefaultMiddleware({
-            serializableCheck:{
-                //Ignore non-serailizable values
-                ignoreActions:["persist/PERSIST","persist/REHYDRATE"],
-            },
+            serializableCheck:false
         }),
         devTools:process.env.NODE_ENV!=="production",
 });

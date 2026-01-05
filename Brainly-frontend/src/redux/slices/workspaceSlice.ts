@@ -14,7 +14,7 @@ export interface Workspace {
     description?: string;
     owner: Member;
     members: Member[];
-    links?: any[];
+    links?: string[];
     createdAt: string;
 }
 
@@ -35,11 +35,8 @@ const initialState: WorkspaceState = {
 //fetch All Workspaces
 export const fetchWorkspaces = createAsyncThunk("workspaces/fetchAll", async (_, { rejectWithValue }) => {
     try {
-        console.log(localStorage.getItem('token'));
         const res = await axios.get(`${BACKEND_URL}api/workspaces`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+            withCredentials: true
         })
         return res.data.data;
     } catch (error) {
@@ -53,9 +50,7 @@ export const createWorkspace = createAsyncThunk("workspaces/create", async ({ na
     console.log(name, description);
     try {
         const res = await axios.post(`${BACKEND_URL}api/workspaces`, { name, description }, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+            withCredentials: true
         });
         return res.data.data;
     } catch (error) {
@@ -69,9 +64,7 @@ export const createWorkspace = createAsyncThunk("workspaces/create", async ({ na
 export const deleteWorkspace = createAsyncThunk("workspace/delete", async (id: string, { rejectWithValue }) => {
     try {
         await axios.delete(`${BACKEND_URL}api/workspaces/${id}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+            withCredentials: true
         })
         return id;
     } catch (error) {
@@ -83,9 +76,7 @@ export const deleteWorkspace = createAsyncThunk("workspace/delete", async (id: s
 export const fetchWorkspaceById = createAsyncThunk("workspace/fetchById", async (id: string, { rejectWithValue }) => {
     try {
         const res = await axios.get(`${BACKEND_URL}api/workspace/${id}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+            withCredentials: true
         })
         return res.data.data;
     } catch (error) {
@@ -97,9 +88,7 @@ export const addCollaborator = createAsyncThunk("workspace/addCollaborator", asy
     { rejectWithValue }) => {
     try {
         const res = await axios.post(BACKEND_URL + `api/workspaces/${workspaceId}/collaborators`, { email }, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+            withCredentials: true
         })
         return res.data.data;
     } catch (error: any) {
@@ -107,12 +96,10 @@ export const addCollaborator = createAsyncThunk("workspace/addCollaborator", asy
     }
 })
 
-export const removeCollaborator = createAsyncThunk("workspace/removeCollaborator", async ({ workspaceId, memeberId }: { workspaceId: string, memeberId: string }, { rejectWithValue }) => {
+export const removeCollaborator = createAsyncThunk("workspace/removeCollaborator", async ({ workspaceId, memberId }: { workspaceId: string, memberId: string }, { rejectWithValue }) => {
     try {
-        const res = await axios.delete(BACKEND_URL + `api/workspaces/${workspaceId}/collaborators/${memeberId}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+        const res = await axios.delete(BACKEND_URL + `api/workspaces/${workspaceId}/collaborators/${memberId}`, {
+            withCredentials: true
         })
         return res.data.data;
     } catch (error) {
@@ -124,8 +111,7 @@ const workspaceSlice = createSlice({
     name: "workspaces",
     initialState,
     reducers: {
-        setSelectedWorkspaces(state, action: PayloadAction<string>){
-            console.log("CALLED");
+        setSelectedWorkspaces(state, action: PayloadAction<string>) {
             const id = action.payload;
             state.selected = state.list.find((w) => w._id === id) || null;
         },
@@ -162,7 +148,17 @@ const workspaceSlice = createSlice({
             })
 
             //delete
+            .addCase(deleteWorkspace.pending, (state) => {
+                state.loading = true;
+            })
+
+            .addCase(deleteWorkspace.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
             .addCase(deleteWorkspace.fulfilled, (state, action) => {
+                state.loading = false;
                 state.list = state.list.filter((w) => w._id !== action.payload);
                 if (state.selected?._id === action.payload) {
                     state.selected = null;
