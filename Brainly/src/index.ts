@@ -4,16 +4,15 @@ import cors from "cors";
 import { connectDB } from "./config/db";
 import "./queue/emailQueue";
 import { connectRedis } from "./config/redis";
-
+import cookieParser from "cookie-parser";
 //Routers
 import userRoutes from "./routes/userRoutes";
 import linkRoutes from "./routes/linkRoutes";
 import workspaceRoutes from "./routes/workspaceRoutes";
-
 dotenv.config();
-connectDB();
 
 const app=express();
+app.set("trust proxy",1);
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -24,52 +23,54 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization"
-    ],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 
-// allow prefligh
 
+// allow prefligh
+app.options("*",cors());
 
 app.use(express.json({limit:"10mb"}));
 app.use(express.urlencoded({extended:true}));
+app.use(cookieParser());
 
-app.use("/health",(req,res)=>{
-  res.send("HEALTHY");
+app.use("/health",(_,res)=>{
+  res.status(200).json({status:"Ok"});
 })
 
 //Routes
-console.log("USER ROUTES LOADDED");
+console.log("USER ROUTES LOADED");
 app.use("/api/v1/users",userRoutes);
 app.use("/api/links",linkRoutes);
 app.use("/api/workspaces",workspaceRoutes);
 
-
 const PORT=process.env.PORT || 3000
-const server=app.listen(PORT,async()=>{
-    await connectRedis();
-    console.log(`🚀 Server running on PORT ${PORT}`)
-});
 
-process.on("SIGTERM",gracefulShutdown);
-process.on("SIGINT",gracefulShutdown);
+async function startServer() {
+  await connectDB();
+  await connectRedis();
 
-async function gracefulShutdown(){
-    console.log("\nShutting Down Gracefully");
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server running on PORT ${PORT}`);
+  });
 
-    server.close(()=>{
-        console.log("Closed all HTTP connections");
-    })
+  const shutdown=()=>{
+    console.log("Gracefully Shutting Down...");
+    server.close(()=>process.exit(0));
+  };
 
-    setTimeout(()=>{
-        console.log("Forcing Exit...");
-        process.exit(1);
-    },10_000);
+  process.on("SIGTERM", () => shutdown);
+  process.on("SIGINT", () => shutdown);
 }
+startServer();
