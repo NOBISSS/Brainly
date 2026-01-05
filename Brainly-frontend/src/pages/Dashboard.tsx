@@ -1,7 +1,7 @@
 // src/pages/Dashboard.tsx
-import { easeInOut, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../redux/store";
+import type {  RootState,AppDispatch } from "../redux/store";
 import { Sidebar } from "../components/Sidebar";
 import { Button } from "../components/Button";
 import { PlusIcon } from "../icons/PlusIcon";
@@ -10,42 +10,37 @@ import { CreateContentModal } from "../components/CreateContentModal";
 import { CreateWorkspaceModal } from "../components/CreateWorkspaceModal";
 import { useContent } from "../hooks/useContent";
 import FilterModal from "../components/FilterModal";
-import { MdArrowDropUp, MdDelete } from "react-icons/md";
-import { MdArrowDropDown } from "react-icons/md";
+import { MdArrowDropUp, MdDelete,MdArrowDropDown } from "react-icons/md";
 import { DeleteContentModal } from "../components/DeleteContentModal";
-import { deleteLink } from "../redux/slices/linkSlice";
+import { deleteLink,type Link } from "../redux/slices/linkSlice";
 import toast from "react-hot-toast";
 import { Menu } from "lucide-react";
 
 export default function Dashboard() {
-  const [deleteModalOpen, setDeleteModal] = useState(false);
-  const [linkToDelete, setLinkToDelete] = useState<any>(null);
-  const selectedWorkspace = useSelector(
+  const dispatch = useDispatch<AppDispatch>();
+
+    const selectedWorkspace = useSelector(
     (state: RootState) => state.workspaces.selected || null
   );
 
-  const [showFilter, setShowFilter] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar
   const [modalOpen, setModalOpen] = useState(false);
-  const dispatch = useDispatch();
   const [createWorkspaceModalOpen, setCreateWorkspaceModalOpen] =
     useState(false);
-  const [refresh, setRefresh] = useState(false);
+  const [deleteModalOpen, setDeleteModal] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<{
+    id:string,
+    title:string,
+  } | null>(null);
+  
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
   const { contents, loading, error,refetch } = useContent(
     selectedWorkspace?._id ?? null
   );
-  console.log("DASHBOARD");
-  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar
 
-  const handleRefresh = () => refetch();
-
-  const handleToggleCategory = (cat: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
-  };
-
-  const openDeleteModal = (id: string, title: string) => {
+   const openDeleteModal = (id: string, title: string) => {
     setLinkToDelete({ id, title });
     setDeleteModal(true);
   };
@@ -58,30 +53,36 @@ export default function Dashboard() {
       toast.success("Link Deleted");
       setDeleteModal(false);
       setLinkToDelete(null);
-      handleRefresh();
+      refetch();
     } catch (err: any) {
       console.log("Error when Deleting Link:", err);
       toast.error(err?.message || "Failed to Delete The Link");
     }
   };
 
+  const handleToggleCategory = (cat: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
   const filteredContents = useMemo(() => {
     if (!selectedCategories.length) return contents;
-    return contents.filter((item: any) =>
+    return contents.filter((item: Link) =>
       selectedCategories.includes(item.category)
     );
   }, [contents, selectedCategories]);
+
+  const categories = useMemo(() => {
+    const unique = new Set<string>();
+    contents.forEach((c: Link) => unique.add(c.category));
+    return Array.from(unique);
+  }, [contents]);
 
   useEffect(() => {
     setSelectedCategories([]);
     setShowFilter(false);
   }, [selectedWorkspace]);
-
-  const categories = useMemo(() => {
-    const unique = new Set<string>();
-    contents.forEach((c: any) => unique.add(c.category));
-    return Array.from(unique);
-  }, [contents]);
 
   return (
     <div className="flex min-h-screen bg-gray-50 bg-linear-to-t from-gray-200 to-white">
@@ -94,7 +95,7 @@ export default function Dashboard() {
         <CreateContentModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          onSuccess={handleRefresh}
+          onSuccess={refetch}
         />
         <CreateWorkspaceModal
           open={createWorkspaceModalOpen}
@@ -162,18 +163,18 @@ export default function Dashboard() {
         {/* Workspace Links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
-            <p className="text-center text-gray-500 py-12">Loading links...</p>
+            <p className="text-center text-gray-500 py-12 col-span-full">Loading links...</p>
           ) : error ? (
-            <p className="text-center text-red-500 py-12">{error}</p>
+            <p className="text-center text-red-500 py-12 col-span-full">{error}</p>
           ) : filteredContents && filteredContents.length > 0 ? (
-            filteredContents.map(({ url, title,thumbnail, _id }: any, index: number) => (
+            filteredContents.map(({ url, title,thumbnail, _id }) => (
               <motion.div
-                key={_id || index}
+                key={_id}
                 whileHover={{ scale: 1.05 }}
                 layoutId={_id}
                 initial={{ y: -10, scale: 0.9 }}
                 animate={{ y: 0, scale: 1 }}
-                style={{backgroundImage:`url(${thumbnail})`}}
+                style={thumbnail ? {backgroundImage:`url(${thumbnail})`} : undefined}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
               
@@ -187,12 +188,12 @@ export default function Dashboard() {
                     <MdDelete
                       onClick={(e) => {
                         e.stopPropagation();
-                        openDeleteModal(_id, title);
+                        openDeleteModal(_id!, title);
                       }}
                     />
                   </div>
                 </div>
-                <p className="relative text-sm text-gray-200 truncate">{url}</p>
+                <p className="relative text-sm text-gray-200 truncate mt-1">{url}</p>
                 <div className="mt-4">
                   <a
                     href={url}

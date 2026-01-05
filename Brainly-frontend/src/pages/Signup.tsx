@@ -7,13 +7,14 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { setUserDetails } from "../redux/slices/userSlice";
 import { useDispatch } from "react-redux";
+import { AppDispatch } from "../redux/store";
 
 export function Signup() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   async function sendOtp() {
     const username = usernameRef.current?.value?.trim();
@@ -25,12 +26,22 @@ export function Signup() {
       return;
     }
 
+    if (!email.includes("@")) {
+      toast.error("Enter a valid email");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+
     // NOTE: if your slice expects { name, email, password } change this accordingly
-    dispatch(setUserDetails({ username, email, password }));
+    dispatch(setUserDetails({ name, email }));
 
     try {
       const resp = await axios.post(
-        "http://127.0.0.1:3000/api/v1/users/sendotp",
+        BACKEND_URL + "api/v1/users/sendotp",
         { email }
       );
 
@@ -44,31 +55,11 @@ export function Signup() {
       console.log(error);
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed while sending OTP"
+        error?.message ||
+        "Failed while sending OTP"
       );
     }
   }
-
-  async function signup() {
-    const username = usernameRef.current?.value?.trim();
-    const email = emailRef.current?.value?.trim();
-    const password = passwordRef.current?.value;
-
-    if (!username || !email || !password) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    await axios.post(BACKEND_URL + "api/v1/users/register", {
-      name: username,
-      email,
-      password,
-    });
-
-    navigate("/signin");
-  }
-
   return (
     <div className="min-h-screen w-full bg-linear-to-b from-purple-200 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
