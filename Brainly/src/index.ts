@@ -39,7 +39,7 @@ app.use(
 
 
 // allow prefligh
-app.options("*",cors());
+//app.options("/*",cors());
 
 app.use(express.json({limit:"10mb"}));
 app.use(express.urlencoded({extended:true}));
@@ -59,7 +59,7 @@ const PORT=process.env.PORT || 3000
 
 async function startServer() {
   await connectDB();
-  await connectRedis();
+  //await connectRedis();
 
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on PORT ${PORT}`);

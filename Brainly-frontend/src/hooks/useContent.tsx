@@ -38,9 +38,7 @@ export function useContent(workspaceId:string|null):useContentReturn {
             setError(null);
 
             const response = await axios.get(BACKEND_URL + `api/links/${workspaceId}`, {
-                    headers: {
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
-                    },
+                    withCredentials:true
             });
 
             const links:Link[]=response.data.data || response.data;

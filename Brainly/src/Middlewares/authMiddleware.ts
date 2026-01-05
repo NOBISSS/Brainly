@@ -3,9 +3,7 @@ import jwt from "jsonwebtoken";
 import redis from "../config/redis";
 import User from "../models/userModel";
 
-if(!process.env.JWT_SECRET){
-  throw new Error("JWT_SECRET not Defined");
-}
+
 
 const JWT_SECRET = process.env.JWT_SECRET || "BRAINLY";
 

@@ -17,6 +17,9 @@ export function ProtectedRoutes() {
                 setStatus("Authorized");
             } catch (err: any) {
                 console.error("Auth Verify Failed:", err?.response || err);
+                if(err.name==="CanceledError"){
+                    return;
+                }
 
                 if (err.response?.status === 401) {
                     setStatus("Unauthorized");

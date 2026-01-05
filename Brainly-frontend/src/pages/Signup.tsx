@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { setUserDetails } from "../redux/slices/userSlice";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "../redux/store";
+import type { AppDispatch } from "../redux/store";
 import { api } from "../api/axios";
 
 export function Signup() {
