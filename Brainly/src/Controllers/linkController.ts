@@ -2,8 +2,9 @@ import { Request, Response } from "express"
 import Link from "../models/linkModel";
 import Workspace from "../models/workspaceModel"
 import ogs from "open-graph-scraper";
+import mongoose from "mongoose";
 
-const DEFAULT_THUBNAIL = "https://images.unsplash.com/photo-1764866558045-ee48abd52732?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1764866558045-ee48abd52732?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
 //CREATE LINK
 export const createLink = async (req: Request, res: Response) => {
@@ -11,17 +12,31 @@ export const createLink = async (req: Request, res: Response) => {
         const { title, url, category, tags, workspace } = req.body;
         const userId = req.user._id;
 
+        if (workspace) {
+            const ws = await Workspace.findOne({
+                _id: workspace,
+                $or: [{ owner: userId }, { members: userId }],
+            });
+
+            if (!ws) {
+                return res.status(403).json({
+                    success: false,
+                    message: "No access to this workspace",
+                });
+            }
+        }
+
         if (!url || !category) {
             return res.status(400).json({ message: "URL and Category are required" });
         }
 
         try { new URL(url); } catch { return res.status(400).json({ success: false, message: "Invalid URL" }) };
 
-        let thumbnail = DEFAULT_THUBNAIL;
+        let thumbnail = DEFAULT_THUMBNAIL;
         let fetchedTitle = title;
 
         try {
-            const { result } = await ogs({ url, timeout: 5000 });
+            const { result } = await ogs({ url, timeout: 3000,onlyGetOpenGraphInfo:true });
             if (result.success) {
                 thumbnail = result.ogImage?.[0]?.url || thumbnail;
                 fetchedTitle = fetchedTitle || result.ogTitle || "Untitled";
@@ -32,24 +47,24 @@ export const createLink = async (req: Request, res: Response) => {
 
         const link = await Link.create({
             user: req.user._id,
-            title:fetchedTitle || title,
+            title: fetchedTitle || title,
             url,
-            category: category.toUpperCase(),
-            tags,
+            category: String(category).toUpperCase(),
+            tags:Array.isArray(tags)?tags:[],
             workspace: workspace || null,
             thumbnail
         });
 
         if (workspace) {
             await Workspace.findByIdAndUpdate(workspace, {
-                $push: {
+                $addToSet: {
                     links: link._id
                 }
             })
         }
 
         res.status(201).json({ success: true, message: "Link Created Successfully", data: link });
-    } catch (error:any) {
+    } catch (error: any) {
         console.log(error);
         return res.status(500).json({
             success: false,
@@ -80,7 +95,8 @@ export const getLinks = async (req: Request, res: Response) => {
 
         const links = await Link.find({ workspace: workspaceId })
             .sort({ createdAt: -1 })
-            .select("-__v");
+            .select("-__v")
+            .lean();
 
         res.status(200).json({
             success: true,
@@ -88,23 +104,27 @@ export const getLinks = async (req: Request, res: Response) => {
             data: links
         });
     } catch (err) {
-        res.status(500).json({success:false, message: "Error Fetching Links", error: err })
+        res.status(500).json({ success: false, message: "Error Fetching Links", error: err })
     }
 }
 
 export const deleteLink = async (req: Request, res: Response) => {
     try {
+        
         const { id } = req.params;
-        const userId=req.user._id;
-        const link = await Link.findOne({ _id: id,user:userId });;
+        if(!mongoose.Types.ObjectId.isValid(id)){
+            return res.status(400).json({message:"Invalid Link ID"});
+        }
+        const userId = req.user._id;
+        const link = await Link.findOne({ _id: id, user: userId });
         if (!link) {
             return res.status(404).json({
                 message: "Link not found or Not Owned By You"
             })
         }
 
-        if(link.workspace){
-        await Workspace.findByIdAndUpdate(link.workspace,{$pull:{links:link._id}});
+        if (link.workspace) {
+            await Workspace.findByIdAndUpdate(link.workspace, { $pull: { links: link._id } });
         }
 
         await Link.findByIdAndDelete(id);
@@ -114,7 +134,7 @@ export const deleteLink = async (req: Request, res: Response) => {
         })
     } catch (error) {
         res.status(500).json({
-            success:false,
+            success: false,
             message: "Failed to Delete Link Content",
             error
         })
