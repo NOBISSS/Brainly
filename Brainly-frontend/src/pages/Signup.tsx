@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../redux/store";
 
 export function Signup() {
+  const [loading,setLoading]=useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -35,14 +36,14 @@ export function Signup() {
       return;
     }
 
-
     // NOTE: if your slice expects { name, email, password } change this accordingly
     dispatch(setUserDetails({ name, email }));
 
     try {
       const resp = await axios.post(
         BACKEND_URL + "api/v1/users/sendotp",
-        { email }
+        { email },
+        {withCredentials:true}
       );
 
       if (resp.data.success) {
