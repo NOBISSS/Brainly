@@ -1,4 +1,9 @@
-export const LinkType=["youtube","twitter","canva","doc","unknown"];
+export type LinkType =
+  | "youtube"
+  | "twitter"
+  | "canva"
+  | "doc"
+  | "unknown";
 
 interface LinkPattern {
   type: LinkType;
