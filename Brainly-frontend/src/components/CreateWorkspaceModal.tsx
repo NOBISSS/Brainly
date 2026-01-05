@@ -4,6 +4,7 @@ import { CrossIcon } from "../icons/CrossIcon";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch  } from "../redux/store";
 import { addCollaborator, createWorkspace as createWorkspaceThunk } from "../redux/slices/workspaceSlice";
 import type { RootState } from "../redux/store"; // ✅ from your store
 
@@ -28,12 +29,15 @@ export function CreateWorkspaceModal({
     (state: RootState) => state.workspaces.workspaces
   );
   const firstWorkspace = workspaces?.[0] || null;
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleAddCollaborator = () => {
-    const email = emailRef.current?.value.trim();
-    if (!email) return toast.error("Enter a valid email");
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const email = emailRef.current?.value?.trim();
+    if (!emailRegex.test(email)){
+      toast.error("Enter a valid email");
+      return
+    }
     if (collaborators.includes(email)) {
       toast.error("Collaborator already added");
       return;
@@ -47,7 +51,7 @@ export function CreateWorkspaceModal({
     setCollaborators((prev) => prev.filter((e) => e !== email));
   };
 
-  const CreateWorkspace = async () => {
+  const createWorkspace = async () => {
     const name = nameRef.current?.value.trim();
     const description = descRef.current?.value.trim();
 
@@ -55,23 +59,26 @@ export function CreateWorkspaceModal({
 
     try {
       setIsCreating(true);
-      const data = { name, description };
-
-      const created = await dispatch(createWorkspaceThunk(data)).unwrap();
+      const created = await dispatch(createWorkspaceThunk({ name, description })).unwrap();
       toast.success("Workspace created successfully");
 
+      
+
       // Step 2: Add collaborators (if any)
-      if (collaborators.length > 0) {
-        const workspaceId = created?._id || firstWorkspace?._id;
+
+      const workspaceId = created?._id
 
         if (!workspaceId) {
-          console.warn("No WorkspaceId Available for collaborator");
-        } else {
+          throw new Error("Workspace ID missing After Creation");
+        } 
+        
           for (const email of collaborators) {
-            await dispatch(addCollaborator({ workspaceId, email }));
+            await dispatch(addCollaborator({ workspaceId, email })).unwrap();
           }
-          toast.success("Collaborators added Successfully");
-        }
+          
+
+      if (collaborators.length > 0) {
+        toast.success("Collaborators added Successfully");
       }
 
       onSuccess?.();
@@ -91,7 +98,7 @@ export function CreateWorkspaceModal({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 backdrop-blur-sm bg-black/30 z-40" />
+      <div className="fixed inset-0 backdrop-blur-sm bg-black/30 z-40" onClick={onClose}/>
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -157,7 +164,7 @@ export function CreateWorkspaceModal({
           {/* Submit Button */}
           <div className="flex justify-center mt-5">
             <Button
-              onClick={CreateWorkspace}
+              onClick={createWorkspace}
               variant="Primary"
               text={isCreating ? "Creating..." : "Create Workspace"}
               fullWidth={true}
