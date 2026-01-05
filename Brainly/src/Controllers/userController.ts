@@ -3,13 +3,10 @@ import User from "../models/userModel"
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { GenerateToken } from "../utils/generateToken";
 import OTPMODAL from "../models/OTP-MODAL";
-import userModel from "../models/userModel";
 import otpGenerator from "otp-generator";
 import { emailQueue } from "../queue/emailQueue";
 import { oAuth2Client } from "../config/OAuth2Client";
 import axios from "axios";
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 export const sendOTP = async (req: Request, res: Response) => {
     try {
@@ -23,7 +20,7 @@ export const sendOTP = async (req: Request, res: Response) => {
         }
 
         //checking existance
-        const existingUser = await userModel.findOne({ email });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(401).json({
@@ -57,6 +54,11 @@ export const sendOTP = async (req: Request, res: Response) => {
 export const googleSignin= async (req:Request, res:Response) => {
   try {
     const code = req.query.code;
+
+    if(!req.query.code){
+        return res.status(400).json({message:"Authorization Code Missing"});
+    }
+
     const googleResponse = await oAuth2Client.getToken(code as string);
     oAuth2Client.setCredentials(googleResponse.tokens);
     const userRes = await axios.get(
@@ -74,7 +76,7 @@ export const googleSignin= async (req:Request, res:Response) => {
     const accessToken = GenerateToken(user._id.toString());
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV==="production",
       sameSite: <"none">"none",
       path: "/",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
@@ -96,10 +98,15 @@ export const googleSignin= async (req:Request, res:Response) => {
 export const registerUser = async (req: Request, res: Response) => {
     try {
         const { name, email, password, otp } = req.body;
+        
         console.log(req.body);
         if (!name || !email || !password || !otp)
             return res.status(400).json({ success: false, message: "All Fields are required" });
 
+        const exists=await User.findOne({email});
+        if(exists){
+            return res.status(409).json({message:"User Already Exists"});
+        }
         //test here
         const recentOTP = await OTPMODAL.find({ email }).sort({ createdAt: -1 }).limit(1);
         if (!recentOTP.length || recentOTP[0].otp.length==0) {
@@ -144,7 +151,7 @@ export const loginUser = async (req: Request, res: Response) => {
         //@ts-ignore
         const token = GenerateToken(user._id.toString());
 
-        res.cookie("token",token,{
+        res.cookie("accessToken",token,{
             httpOnly:true,
             sameSite:"strict",
             maxAge:7*24*60*60*1000
@@ -153,7 +160,7 @@ export const loginUser = async (req: Request, res: Response) => {
         return res.json({
             success: true,
             message: "Login Successful",
-            data: { user: { name: user.name, email: user.email }, token }
+            data: { user: { name: user.name, email: user.email } }
         });
     } catch (err) {
         console.log(err);

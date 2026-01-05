@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db";
 import "./queue/emailQueue";
+import { connectRedis } from "./config/redis";
 
 //Routers
 import userRoutes from "./routes/userRoutes";
@@ -52,7 +53,8 @@ app.use("/api/workspaces",workspaceRoutes);
 
 
 const PORT=process.env.PORT || 3000
-const server=app.listen(PORT,()=>{
+const server=app.listen(PORT,async()=>{
+    await connectRedis();
     console.log(`🚀 Server running on PORT ${PORT}`)
 });
 
