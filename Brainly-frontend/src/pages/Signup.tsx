@@ -8,21 +8,24 @@ import toast from "react-hot-toast";
 import { setUserDetails } from "../redux/slices/userSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../redux/store";
+import { api } from "../api/axios";
 
 export function Signup() {
-  const [loading,setLoading]=useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+
+  const [loading,setLoading]=useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
   async function sendOtp() {
-    const username = usernameRef.current?.value?.trim();
+    const name = usernameRef.current?.value?.trim();
     const email = emailRef.current?.value?.trim();
     const password = passwordRef.current?.value;
 
-    if (!username || !email || !password) {
+    if (!name || !email || !password) {
       toast.error("Please fill all fields");
       return;
     }
@@ -38,27 +41,19 @@ export function Signup() {
 
     // NOTE: if your slice expects { name, email, password } change this accordingly
     dispatch(setUserDetails({ name, email }));
-
+    setLoading(true);
     try {
-      const resp = await axios.post(
-        BACKEND_URL + "api/v1/users/sendotp",
-        { email },
-        {withCredentials:true}
-      );
-
-      if (resp.data.success) {
+        await api.post("api/v1/users/sendotp",{ email });
         toast.success("OTP sent successfully");
         navigate("/verify-otp");
-      } else {
-        toast.error("Please enter a valid email");
-      }
     } catch (error: any) {
-      console.log(error);
       toast.error(
         error?.response?.data?.message ||
         error?.message ||
         "Failed while sending OTP"
       );
+    }finally{
+      setLoading(false);
     }
   }
   return (
@@ -85,8 +80,9 @@ export function Signup() {
                 onClick={sendOtp}
                 loading={false}
                 variant="Primary"
-                text="Signup"
+                text={loading ? "Sending OTP..." : "Send OTP"}
                 fullWidth={true}
+                disabled={loading}
               />
             </div>
 
@@ -99,14 +95,6 @@ export function Signup() {
                 Login
               </span>
             </div>
-
-            {/* Optional: secondary action if you still want direct signup */}
-            {/* <button
-              className="mt-3 text-xs text-gray-500 hover:underline"
-              onClick={signup}
-            >
-              Debug: Signup without OTP
-            </button> */}
           </div>
         </div>
       </div>
