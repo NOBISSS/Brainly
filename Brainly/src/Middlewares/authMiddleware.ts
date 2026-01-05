@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import redis from "../config/redis";
 import User from "../models/userModel";
 
+if(!process.env.JWT_SECRET){
+  throw new Error("JWT_SECRET not Defined");
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || "BRAINLY";
 
 export const protect = async (
@@ -14,7 +18,7 @@ export const protect = async (
 
   if (req.headers.authorization?.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies?.token) {
+  } else if (req.cookies?.accessToken) {
     token = req.cookies.token;
   }
 
@@ -34,9 +38,8 @@ export const protect = async (
       });
     }
 
-    console.log("HELLO");
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    console.log(decoded);
+
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       return res.status(401).json({
@@ -45,7 +48,7 @@ export const protect = async (
       });
     }
 
-    req.user = user; // ✅ NOW VALID
+    req.user = user;
     next();
   } catch (err) {
     return res.status(401).json({
@@ -56,13 +59,13 @@ export const protect = async (
 };
 
 export const logout = async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const token = req.headers.authorization?.split(" ")[1] || req.cookies?.accessToken;
 
   if (token) {
     await redis.set(`blacklist:${token}`, "true", "EX", 7 * 24 * 60 * 60);
   }
 
-  res.status(200).json({
+  res.clearCookie("accessToken",{httpOnly:true,sameSite:"strict",secure:process.env.NODE_ENV==="production"}).status(200).json({
     success: true,
     message: "Logged out successfully",
   });
