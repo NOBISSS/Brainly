@@ -1,22 +1,36 @@
 import { Request, Response } from "express";
 import User from "../models/userModel"
-import { AuthRequest } from "../middlewares/authMiddleware";
 import { GenerateToken } from "../utils/generateToken";
 import OTPMODAL from "../models/OTP-MODAL";
 import otpGenerator from "otp-generator";
 import { emailQueue } from "../queue/emailQueue";
 import { oAuth2Client } from "../config/OAuth2Client";
 import axios from "axios";
+import redis from "../config/redis";
+import { OTP_TTL } from "../constants/constant";
+import crypto from "crypto";
+import { hashOtp } from "../utils/hashOtp";
 
 export const sendOTP = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
 
-        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+         if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
             return res.status(400).json({
                 success: false,
                 message: "Valid Email Required"
             })
+        }
+
+        //rate limit
+        const otpKey=`otp:${email}`;
+        const attemptsKey=`otp_attempts:${email}`;
+
+        const exist=await redis.exists(otpKey);
+        if(exist){
+            return res.status(429).json({
+                message:"OTP already sent.Please wait Before Retrying"
+            });
         }
 
         //checking existance
@@ -29,13 +43,20 @@ export const sendOTP = async (req: Request, res: Response) => {
             });
         }
 
+        
+
         //sending otp here
         let otp = otpGenerator.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
 
-        await OTPMODAL.deleteMany({ email });
-        await OTPMODAL.create({ email, otp, });
+        const hashedOtp=hashOtp(otp);
+
+        await redis.set(otpKey, hashedOtp, { EX: OTP_TTL });
+
+        //reseting attempts counter
+        await redis.del(attemptsKey);
 
         await emailQueue.add("send-otp-email", { email, otp })
+
 
         res.status(200).json({
             success: true,
@@ -51,71 +72,96 @@ export const sendOTP = async (req: Request, res: Response) => {
 }
 
 //google sign in
-export const googleSignin= async (req:Request, res:Response) => {
-  try {
-    const code = req.query.code;
+export const googleSignin = async (req: Request, res: Response) => {
+    try {
+        const code = req.query.code;
 
-    if(!req.query.code){
-        return res.status(400).json({message:"Authorization Code Missing"});
+        if (!req.query.code) {
+            return res.status(400).json({ message: "Authorization Code Missing" });
+        }
+
+        const googleResponse = await oAuth2Client.getToken(code as string);
+        oAuth2Client.setCredentials(googleResponse.tokens);
+        const userRes = await axios.get(
+            `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
+        );
+
+        let user = await User.findOne({ email: userRes.data.email });
+        if (!user) {
+            user = await User.create({
+                username: userRes.data.name,
+                email: userRes.data.email,
+                method: "oauth",
+            });
+        }
+        const accessToken = GenerateToken(user._id.toString());
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: <"none">"none",
+            path: "/",
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        };
+        res
+            .status(201)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .json({ message: "signin successfull", user });
+        return;
+    } catch (err: any) {
+        res
+            .status(500)
+            .json({ message: err.message || "Something went wrong from ourside" });
     }
-
-    const googleResponse = await oAuth2Client.getToken(code as string);
-    oAuth2Client.setCredentials(googleResponse.tokens);
-    const userRes = await axios.get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
-    );
-
-    let user = await User.findOne({ email: userRes.data.email });
-    if (!user) {
-      user = await User.create({
-        username: userRes.data.name,
-        email: userRes.data.email,
-        method: "oauth",
-      });
-    }
-    const accessToken = GenerateToken(user._id.toString());
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV==="production",
-      sameSite: <"none">"none",
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    };
-    res
-      .status(201)
-      .cookie("accessToken", accessToken, cookieOptions)
-      .json({ message: "signin successfull", user });
-    return;
-  } catch (err: any) {
-    res
-      .status(500)
-      .json({ message: err.message || "Something went wrong from ourside" });
-  }
 };
 
 
 //REGISTER USER
 export const registerUser = async (req: Request, res: Response) => {
     try {
-        const { name, email, password, otp } = req.body;
         
-        console.log(req.body);
+        const { name, email, password, otp } = req.body;
+        const otpKey=`otp:${email}`;
+        const attemptsKey=`otp_attempts:${email}`;
+        
         if (!name || !email || !password || !otp)
             return res.status(400).json({ success: false, message: "All Fields are required" });
 
-        const exists=await User.findOne({email});
-        if(exists){
-            return res.status(409).json({message:"User Already Exists"});
-        }
-        //test here
-        const recentOTP = await OTPMODAL.find({ email }).sort({ createdAt: -1 }).limit(1);
-        if (!recentOTP.length || recentOTP[0].otp.length==0) {
-            return res.status(400).json({ success: false, message: "Invalid or Expired OTP" });
+        const exists = await User.findOne({ email });
+        if (exists) {
+            return res.status(409).json({ message: "User Already Exists" });
         }
 
-        const user = await User.create({ name, email: email.toLowerCase(), password });        //@ts-ignore
+        const storedHashedOtp = await redis.get(`otp:${email}`);
+
+        if (!storedHashedOtp) {
+            return res.status(400).json({ message: "OTP Expired or not found" });
+        }
+
+        const attempts=await redis.incr(attemptsKey);
+
+        if(attempts===1){
+            await redis.expire(attemptsKey,5*60);
+        }
+
+        if(attempts>5){
+            await redis.del(otpKey);
+            await redis.del(attemptsKey);
+            return res.status(429).json({
+                message:"Too Many Attempts.OTP invalidated",
+            })
+        }
+
+        const hashedInputOtp=hashOtp(otp);
+
+        if (storedHashedOtp !== hashedInputOtp) {
+            return res.status(400).json({ message: "Invalid Otp" });
+        }
+
+        const user = await User.create({ name, email: email.toLowerCase(), password });
+        await redis.del(`otp:${email}`);
+
         const token = GenerateToken(user._id.toString());
-        await OTPMODAL.deleteMany({ email });
+
 
         return res.status(201).json({
             success: true,
@@ -151,10 +197,10 @@ export const loginUser = async (req: Request, res: Response) => {
         //@ts-ignore
         const token = GenerateToken(user._id.toString());
 
-        res.cookie("accessToken",token,{
-            httpOnly:true,
-            sameSite:"strict",
-            maxAge:7*24*60*60*1000
+        res.cookie("accessToken", token, {
+            httpOnly: true,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
         })
         //success/failure response
         return res.json({
