@@ -34,8 +34,9 @@ export const protect = async (
       });
     }
 
+    console.log("HELLO");
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-
+    console.log(decoded);
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       return res.status(401).json({

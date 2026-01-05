@@ -10,6 +10,6 @@ COPY . .
 # 👇 BUILD TYPESCRIPT
 RUN npm run build || true
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD ["npm", "start"]

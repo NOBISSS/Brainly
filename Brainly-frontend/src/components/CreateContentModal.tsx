@@ -51,13 +51,15 @@ export function CreateContentModal({
   const createLink = async () => {
     const title = titleRef.current?.value;
     const link = linkRef.current?.value;
-    const type = typeRef.current?.value || detectLinkType(link || "");
-    const workspaceId = workspaceRef.current?.value || "";
+    const type = selectedType || detectLinkType(link || "");
+    const workspaceId = selectedWorkspace;
 
-    if (!title || !link || type === "unknown" || workspaceId.length === 0) {
+
+    if (!title || !link || !type || !workspaceId) {
       toast.error("Please fill all required details");
       return;
-    }
+  }
+
 
     dispatch(
       addLink({
@@ -66,8 +68,8 @@ export function CreateContentModal({
         category: type,
         workspace: workspaceId,
       })
-    );
-
+    )
+    
     toast.success("Link created successfully");
     onSuccess?.();
     onClose();

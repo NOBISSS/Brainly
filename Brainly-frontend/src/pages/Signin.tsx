@@ -4,6 +4,7 @@ import { Input } from "../components/Input";
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BACKEND_URL } from "../config";
+import toast from "react-hot-toast";
 
 export function Signin(){
         const emailRef=useRef<HTMLInputElement>();
@@ -13,12 +14,12 @@ export function Signin(){
         const loginWithGoogle=()=>{
             window.location.href='http://localhost:3000/api/v1/users/auth/google';
         };
-        
 
         async function signin(){
             const email=emailRef.current?.value;
             const password=passwordRef.current?.value;
             console.log(email,password);
+            try{
           const response= await axios.post(BACKEND_URL+"api/v1/users/login",{
                 email,
                 password
@@ -28,6 +29,10 @@ export function Signin(){
             localStorage.setItem("token",jwt);
             //redirect the user to dashboard
             navigate("/dashboard")
+            }catch(error){
+                console.log("ERROR:",error);
+                toast.error(error.response.data.message);
+            }
         }
     return <div className="h-screen w-screen bg-linear-to-b from-purple-200 to-white bg-gray-200 flex justify-center items-center">
         <div className="bg-gradient-to-b from-black via-75% to-transparent  rounded-2xl  p-4">

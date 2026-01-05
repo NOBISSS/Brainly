@@ -18,7 +18,7 @@ new Worker(
     async(job)=>{
         const {email,otp}=job.data;
         const html=otpTemp(otp);
-        await mailSender(email,"Your Brainly OTP Code",html);
+        await mailSender({email,title:"Your Brainly OTP Code",body:html});
         console.log(`OTP email sent to ${email}`);
     },
     {

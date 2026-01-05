@@ -6,6 +6,8 @@ import OTPMODAL from "../models/OTP-MODAL";
 import userModel from "../models/userModel";
 import otpGenerator from "otp-generator";
 import { emailQueue } from "../queue/emailQueue";
+import { oAuth2Client } from "../config/OAuth2Client";
+import axios from "axios";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -51,6 +53,45 @@ export const sendOTP = async (req: Request, res: Response) => {
     }
 }
 
+//google sign in
+export const googleSignin= async (req:Request, res:Response) => {
+  try {
+    const code = req.query.code;
+    const googleResponse = await oAuth2Client.getToken(code as string);
+    oAuth2Client.setCredentials(googleResponse.tokens);
+    const userRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
+    );
+
+    let user = await User.findOne({ email: userRes.data.email });
+    if (!user) {
+      user = await User.create({
+        username: userRes.data.name,
+        email: userRes.data.email,
+        method: "oauth",
+      });
+    }
+    const accessToken = GenerateToken(user._id.toString());
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: <"none">"none",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    };
+    res
+      .status(201)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .json({ message: "signin successfull", user });
+    return;
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ message: err.message || "Something went wrong from ourside" });
+  }
+};
+
+
 //REGISTER USER
 export const registerUser = async (req: Request, res: Response) => {
     try {
@@ -61,7 +102,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
         //test here
         const recentOTP = await OTPMODAL.find({ email }).sort({ createdAt: -1 }).limit(1);
-        if (!recentOTP.length || recentOTP[0].otp) {
+        if (!recentOTP.length || recentOTP[0].otp.length==0) {
             return res.status(400).json({ success: false, message: "Invalid or Expired OTP" });
         }
 

@@ -103,6 +103,7 @@ const linkSlice=createSlice({
                 state.loading=false;
                 const link=action.payload;
                 const wsId=link.workspace;
+                console.log(state);
                 if(wsId && state.byWorkspace[wsId]){
                 state.links.unshift(action.payload);
                 }
