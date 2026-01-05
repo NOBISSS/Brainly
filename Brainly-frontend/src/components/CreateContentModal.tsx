@@ -1,9 +1,7 @@
-import axios from "axios";
 import { CrossIcon } from "../icons/CrossIcon";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { useEffect, useRef, useState } from "react";
-import { BACKEND_URL } from "../config";
 import toast from "react-hot-toast";
 import { detectLinkType } from "../utils/detectLinkType";
 import { useDispatch } from "react-redux";
@@ -38,42 +36,44 @@ export function CreateContentModal({
   const workspaceRef = useRef<HTMLSelectElement>(null);
   const dispatch = useDispatch();
 
-  const handleLinkChange = () => {
-    const link = linkRef.current?.value || "";
-    if (link) {
-      const detectedType = detectLinkType(link);
-      if (detectedType && detectedType !== "unknown") {
-        setSelectedType(detectedType);
-      }
+  const handleLinkChange = (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const link = e.target.value;
+  if (link) {
+    const detectedType = detectLinkType(link);
+    if (detectedType && detectedType !== "unknown") {
+      setSelectedType(detectedType);
     }
-  };
-
-  const createLink = async () => {
-    const title = titleRef.current?.value;
-    const link = linkRef.current?.value;
-    const type = selectedType || detectLinkType(link || "");
-    const workspaceId = selectedWorkspace;
+  }
+};
 
 
-    if (!title || !link || !type || !workspaceId) {
-      toast.error("Please fill all required details");
-      return;
+  const createLink = () => {
+  const title = titleRef.current?.value;
+  const link = linkRef.current?.value;
+  const type = selectedType || detectLinkType(link || "");
+  const workspaceId = selectedWorkspace;
+
+  if (!title || !link || !type || !workspaceId) {
+    toast.error("Please fill all required details");
+    return;
   }
 
+  dispatch(
+    addLink({
+      title,
+      url: link,
+      category: type,
+      workspace: workspaceId,
+    })
+  );
 
-    dispatch(
-      addLink({
-        title,
-        url: link,
-        category: type,
-        workspace: workspaceId,
-      })
-    )
-    
-    toast.success("Link created successfully");
-    onSuccess?.();
-    onClose();
-  };
+  toast.success("Link created successfully");
+  onSuccess?.();
+  onClose();
+};
+
 
   useEffect(() => {
     if (!open) return;
@@ -119,8 +119,7 @@ export function CreateContentModal({
             <Input
               reference={linkRef}
               placeholder="Link"
-              // if your Input supports onChange, this will auto-detect type as user types
-              onChange={handleLinkChange as any}
+              onChange={handleLinkChange}
             />
 
             {/* Type Selection */}
