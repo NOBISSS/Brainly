@@ -44,8 +44,10 @@ export const addLink = createAsyncThunk("links/addLink", async (linkData: Partia
         const res = await axios.post(`${BACKEND_URL}api/links/create`, linkData, {
             withCredentials: true
         })
+        console.log(res);
         return res.data.data;
     } catch (error: any) {
+        console.log("IN CATCH BLOCK",error)
         return rejectWithValue(error.response?.data?.message || "Failed to Add Link")
     }
 })

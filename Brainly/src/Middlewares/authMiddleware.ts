@@ -14,10 +14,8 @@ export const protect = async (
 ) => {
   let token: string | undefined;
 
-  if (req.headers.authorization?.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies?.accessToken) {
-    token = req.cookies.token;
+  if (req.cookies?.accessToken) {
+    token = req.cookies.accessToken;
   }
 
   if (!token) {
@@ -52,6 +50,7 @@ export const protect = async (
     return res.status(401).json({
       success: false,
       message: "Not authorized, token failed",
+      error:err
     });
   }
 };

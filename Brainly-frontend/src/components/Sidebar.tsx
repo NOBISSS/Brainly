@@ -115,8 +115,8 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   };
 
   const sidebarBody = (
-    <div className="h-full flex flex-col justify-between">
-      <div className="part-1">
+    <div className="h-full flex flex-col justify-between bg-red-600 w-full">
+      <div className="part-1 ">
         {/* Logo Header */}
         <div className="flex items-center gap-2 mt-3 pl-2">
           <img className="w-10 h-10" src={Brain} alt="Brainly Logo" />
@@ -131,7 +131,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Workspace List */}
-        <div className="mt-4 space-y-2 relative flex-1 overflow-y-auto pr-1">
+        <div className="mt-4 space-y-2 bg-red-400 relative flex-1 overflow-y-auto pr-1">
           {loading && (
             <p className="text-gray-400 text-sm">Loading workspaces...</p>
           )}

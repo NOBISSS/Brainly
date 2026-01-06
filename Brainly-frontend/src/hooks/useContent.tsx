@@ -52,7 +52,7 @@ export function useContent(workspaceId:string|null):useContentReturn {
         }finally{
             setLoading(false);
         }
-    },[workspaceId,dispatch]);
+    },[workspaceId,dispatch,cachedLinks]);
 
     
     const refetch=useCallback(()=>{
