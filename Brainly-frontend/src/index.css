@@ -7,6 +7,9 @@
      font-family: "Helvetica";   
 }
 
+
+
+
 :root {
   --bg: #f9fafb;
   --bg-secondary: #ffffff;
@@ -14,6 +17,8 @@
   --text-muted: #6b7280;
   --border: #e5e7eb;
   --primary: #7c3aed;
+  --gradient-from: #e5e7eb;
+  --gradient-to: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -23,4 +28,7 @@
   --text-muted: #94a3b8;
   --border: #1e293b;
   --primary: #a78bfa;
+  --gradient-from: #020617;
+  --gradient-to: #0f172a;
+
 }

@@ -15,6 +15,8 @@ import { DeleteContentModal } from "../components/DeleteContentModal";
 import { deleteLink,type Link } from "../redux/slices/linkSlice";
 import toast from "react-hot-toast";
 import { Menu } from "lucide-react";
+import { ThemeToggle } from "../components/ThemeToggle";
+
 
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -83,9 +85,9 @@ export default function Dashboard() {
     setSelectedCategories([]);
     setShowFilter(false);
   }, [selectedWorkspace]);
-
+//bg-linear-to-t from-gray-200 to-white
   return (
-    <div className="flex min-h-screen bg-gray-50 bg-linear-to-t from-gray-200 to-white">
+    <div className="bg-bg flex min-h-screen text-text bg-linear-to-t from-gray-200 to-white">
       {/* Sidebar (desktop + mobile drawer) */}
       <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -120,6 +122,7 @@ export default function Dashboard() {
                   : "Select a Workspace"}
               </h1>
             </div>
+
 
             <div className="flex gap-2 md:gap-4 flex-wrap justify-end">
               <Button

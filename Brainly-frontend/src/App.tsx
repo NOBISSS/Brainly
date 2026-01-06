@@ -6,8 +6,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { ProtectedRoutes } from "./utils/ProtectedRoutes";
 import { VerifyOTP } from "./pages/VerifyOTP";
+import { ThemeProvider } from "./context/ThemeContext";
+
 function App() {
-  return <BrowserRouter>
+  return <ThemeProvider><BrowserRouter>
     <Routes>
       <Route path="/signup" element={<Signup/>} />
       <Route path="/signin" element={<Signin/>} />
@@ -23,6 +25,7 @@ function App() {
     </Routes>
     <Toaster position="top-right"/>
   </BrowserRouter>
+  </ThemeProvider>
 }
 
 export default App

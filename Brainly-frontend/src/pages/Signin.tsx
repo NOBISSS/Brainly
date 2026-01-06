@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BACKEND_URL } from "../config";
 import toast from "react-hot-toast";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export function Signin() {
     const emailRef = useRef<HTMLInputElement>();
