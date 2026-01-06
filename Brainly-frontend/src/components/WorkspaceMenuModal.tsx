@@ -1,56 +1,76 @@
-import { motion } from "framer-motion";
-import { MdGroupAdd } from "react-icons/md";
-import { MdGroupRemove } from "react-icons/md";
+// src/components/WorkspaceMenuModal.tsx
+import { createPortal } from "react-dom";
 
-const button_common_css="flex w-full text-left px-3.5 py-3 gap-5  hover:bg-purple-50 text-sm text-gray-700 border-b-purple-700 border-b-2 ";
+interface WorkspaceMenuModalProps {
+  open: boolean;
+  position: { top: number; left: number };
+  onClose: () => void;
+  workspaceName: string;
+  onAddCollaborator: () => void;
+  onRemoveCollaborator: () => void;
+  onDelete: () => void;
+}
 
-export function WorkspaceMenuModal({ open, onClose, workspaceName, onAddCollaborator, onRemoveCollaborator, onDelete }: any) {
+export function WorkspaceMenuModal({
+  open,
+  position,
+  onClose,
+  workspaceName,
+  onAddCollaborator,
+  onRemoveCollaborator,
+  onDelete,
+}: WorkspaceMenuModalProps) {
   if (!open) return null;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute -right-30 pt-1 top-10 bg-white border shadow-lg rounded-md rounded-b-xl w-48 z-50"
-    >
-      <button
-        onClick={() => {
-          onAddCollaborator();
-          onClose();
-        }}
-        className={button_common_css}
-      >
-        <span className="text-3xl"><MdGroupAdd/></span> Add Collaborator
-      </button>
+  return createPortal(
+    <>
+      {/* backdrop */}
+      <div
+        className="fixed inset-0 z-[9998]"
+        onClick={onClose}
+      />
 
-      <button
-        onClick={() => {
-          onRemoveCollaborator();
-          onClose();
-        }}
-        className={button_common_css}
+      {/* menu */}
+      <div
+        className="fixed z-[9999] bg-white text-gray-800 rounded-md shadow-xl w-56 border"
+        style={{ top: position.top, left: position.left }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-3xl"><MdGroupRemove/></span> Remove Collaborator
-      </button>
+        <div className="px-4 py-2 text-sm font-semibold border-b">
+          {workspaceName}
+        </div>
 
-      <button
-        onClick={() => {
-          onDelete();
-          onClose();
-        }}
-        className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 text-sm"
-      >
-        🗑️ Delete Workspace
-      </button>
-       <button
-        onClick={() => {
-          onClose();
-        }}
-        className="block w-full text-center px-4 py-2 rounded-b-xl text-sm text-white bg-purple-600"
-      >
-        Close
-      </button>
-    </motion.div>
+        <button
+          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          onClick={() => {
+            onAddCollaborator();
+            onClose();
+          }}
+        >
+          Add collaborator
+        </button>
+
+        <button
+          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          onClick={() => {
+            onRemoveCollaborator();
+            onClose();
+          }}
+        >
+          Manage collaborators
+        </button>
+
+        <button
+          className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+          onClick={() => {
+            onDelete();
+            onClose();
+          }}
+        >
+          Delete workspace
+        </button>
+      </div>
+    </>,
+    document.body
   );
 }

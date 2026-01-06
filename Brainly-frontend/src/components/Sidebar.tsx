@@ -32,6 +32,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     (state: RootState) => state.workspaces
   );
 
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
@@ -44,7 +47,6 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   }, [dispatch]);
 
   const handleWorkspaceClick = (workspace: Workspace) => {
-    console.log("CLICKED");
     const workspaceId = workspace._id;
     const exist = list.some((w) => w._id === workspaceId);
     if (!exist) {
@@ -69,8 +71,8 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong"
+        error?.message ||
+        "Something went wrong"
       );
     } finally {
       setAddCollaboratorOpen(false);
@@ -91,8 +93,8 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       console.log(error);
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong"
+        error?.message ||
+        "Something went wrong"
       );
     }
   };
@@ -115,7 +117,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   };
 
   const sidebarBody = (
-    <div className="h-full flex flex-col justify-between bg-red-600 w-full">
+    <div className="h-full flex flex-col justify-between  w-full">
       <div className="part-1 ">
         {/* Logo Header */}
         <div className="flex items-center gap-2 mt-3 pl-2">
@@ -131,7 +133,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Workspace List */}
-        <div className="mt-4 space-y-2 bg-red-400 relative flex-1 overflow-y-auto pr-1">
+        <div className="mt-4 space-y-2 relative flex-1 overflow-y-auto pr-1">
           {loading && (
             <p className="text-gray-400 text-sm">Loading workspaces...</p>
           )}
@@ -163,20 +165,28 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
+                    setMenuPosition({
+                      top: rect.bottom + 6,
+                      left: rect.right - 200,
+                    });
+
                     setMenuOpenId(menuOpenId === ws._id ? null : ws._id);
                   }}
                   className="opacity-0 group-hover:opacity-100 transition"
                 >
-                  <MoreVertical
-                    size={18}
-                    className="text-gray-500 hover:text-purple-600"
-                  />
+                  <MoreVertical size={18} className="text-gray-500 hover:text-purple-600" />
                 </button>
+
+
 
                 {/* Dropdown menu */}
                 {menuOpenId === ws._id && (
                   <WorkspaceMenuModal
-                    open={true}
+                    open
+                    position={menuPosition}
                     onClose={() => setMenuOpenId(null)}
                     workspaceName={ws.name}
                     onAddCollaborator={() => handleAddCollaborator(ws)}
@@ -186,7 +196,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                     }}
                     onDelete={() => handleDeleteWorkspace(ws._id, ws.name)}
                   />
+
                 )}
+
               </motion.div>
             ))}
           </AnimatePresence>

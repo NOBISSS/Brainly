@@ -144,9 +144,7 @@ export default function Dashboard() {
                 className="cursor-pointer border rounded-md flex gap-3 select-none items-center p-1 px-2 bg-black text-white text-sm md:text-base"
               >
                 Select Category{" "}
-                <span>
                   {showFilter ? <MdArrowDropUp /> : <MdArrowDropDown />}
-                </span>
               </h1>
 
               <FilterModal
@@ -177,7 +175,6 @@ export default function Dashboard() {
                 style={thumbnail ? {backgroundImage:`url(${thumbnail})`} : undefined}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
-              
               >
                 <div className="absolute inset-0 bg-black/70 rounded-3xl"></div>
                 <div className="flex justify-between">

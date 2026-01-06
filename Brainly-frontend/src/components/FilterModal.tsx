@@ -1,53 +1,51 @@
-import { CiSquareMinus } from "react-icons/ci";
-import { CiSquarePlus } from "react-icons/ci";
+import { createPortal } from "react-dom";
 
 interface FilterModalProps {
   open: boolean;
   onClose: () => void;
-  categories: [];
-  selectedCategories: [];
-  onSelectedCategories:()=>void;
+  categories: string[];
+  selectedCategories: string[];
+  onSelectedCategories: (cat: string) => void;
 }
 
-const FilterModal = ({ open, onClose, categories, selectedCategories, onSelectedCategories }:FilterModalProps) => {
-    if (!open) return null;
-    return (
-        <div className='modal select-none bg-black'>
-            <div className='box absolute bg-linear-to-b from-gray-100 to-white right-[4%] w-1/6'>
-                <div className='inner-box bg-linear-to-t from-gray-200 to-white flex flex-col justify-center p-5 rounded-[7px]'>
-                    {
-                        categories.map((cat) => {
-                            const isSelected = selectedCategories.includes(cat);
-                            return (
-                                <div
-                                    key={cat}
-                                    //onClick={()=> onSelectedCategory(cat)}
-                                    className={isSelected ? "" : ""}
-                                >
-                                    <div className='flex justify-between items-center mb-3'>
-                                        <h3 className='capitalize '>{cat}</h3>
-                                        <div onClick={() => onSelectedCategories(cat)} className='checkbox border-1 border-white w-[25px] h-[25px] rounded-[4px] flex items-center justify-center bg-purple-300 text-2xl cursor-pointer'>
-                                            {isSelected ? <CiSquareMinus/> : <CiSquarePlus/>}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    {/* /*CLOSE BUTTON */}
+export default function FilterModal({
+  open,
+  onClose,
+  categories,
+  selectedCategories,
+  onSelectedCategories,
+}: FilterModalProps) {
+  if (!open) return null;
 
-                </div>
+  return createPortal(
+    <>
+      {/* backdrop */}
+      <div
+        className="fixed inset-0 z-[9998]"
+        onClick={onClose}
+      />
 
-                <div className='flex justify-end mb-2'>
-                    <button
-                        onClick={onClose}
-                        className='mt-2 text-sm text-right flex text-white bg-purple-700 w-fit cursor-pointer p-1'
-                    >
-                        X
-                    </button>
-                </div>
-            </div>
+      {/* filter panel */}
+      <div className="fixed z-[9999] top-24 right-6 bg-white rounded-xl shadow-xl w-64 p-4">
+        <h2 className="font-semibold mb-3 text-gray-800">Filter by Category</h2>
+
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {categories.map((cat) => (
+            <label
+              key={cat}
+              className="flex items-center gap-2 text-sm cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedCategories.includes(cat)}
+                onChange={() => onSelectedCategories(cat)}
+              />
+              {cat}
+            </label>
+          ))}
         </div>
-    )
+      </div>
+    </>,
+    document.body
+  );
 }
-
-export default FilterModal

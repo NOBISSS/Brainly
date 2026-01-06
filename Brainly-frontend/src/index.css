@@ -6,3 +6,21 @@
 *{
      font-family: "Helvetica";   
 }
+
+:root {
+  --bg: #f9fafb;
+  --bg-secondary: #ffffff;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #7c3aed;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-secondary: #020617;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
+  --primary: #a78bfa;
+}
