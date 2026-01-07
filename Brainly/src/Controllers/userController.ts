@@ -221,13 +221,6 @@ export const loginUser = async (req: Request, res: Response) => {
 
 
 //Get Current User Profile
-export const getProfile = async (req: AuthRequest, res: Response) => {
-    try {
-        const user = await User.findById(req.user._id).select("-password");
-        return res.json({ success: true, data: user });
-    } catch (err) {
-        res.status(500).json({
-            message: "Error Fetching Profile", err
-        })
-    }
+export const getProfile = async (req: Request, res: Response) => {
+        return res.json({ success: true, data: req.user });
 }

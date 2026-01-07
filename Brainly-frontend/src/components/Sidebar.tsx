@@ -28,6 +28,8 @@ interface SidebarProps {
 
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const userData=useSelector((store)=>store.user);
+  console.log(userData);
   const { list, loading } = useSelector(
     (state: RootState) => state.workspaces
   );

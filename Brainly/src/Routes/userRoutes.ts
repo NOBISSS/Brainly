@@ -21,10 +21,6 @@ router.post("/register",registerUser);
 // });
 
 
-
-router.get('/profile',(req,res)=>{
-    res.send("This is your profile page");
-})
 router.post("/login",loginUser);
 router.get("/profile",protect,getProfile)
 
