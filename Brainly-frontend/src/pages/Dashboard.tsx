@@ -16,6 +16,7 @@ import { deleteLink,type Link } from "../redux/slices/linkSlice";
 import toast from "react-hot-toast";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { CreateContentModalV2 } from "../components/CreateContentModalV2";
 
 
 export default function Dashboard() {
@@ -94,7 +95,7 @@ export default function Dashboard() {
       {/* Main Dashboard */}
       <div className="flex-1 px-4 py-6 md:p-5 md:ml-72 transition-all duration-300">
         {/* Modals */}
-        <CreateContentModal
+        <CreateContentModalV2
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           onSuccess={refetch}

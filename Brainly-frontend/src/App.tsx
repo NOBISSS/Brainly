@@ -7,8 +7,17 @@ import "./App.css";
 import { ProtectedRoutes } from "./utils/ProtectedRoutes";
 import { VerifyOTP } from "./pages/VerifyOTP";
 import { ThemeProvider } from "./context/ThemeContext";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import type{ AppDispatch } from "./redux/store";
+import { fetchCurrentUser } from "./redux/slices/userThunks";
 
 function App() {
+  // const dispatch=useDispatch<AppDispatch>();
+  // useEffect(()=>{
+  //   dispatch(fetchCurrentUser());
+
+  // },[dispatch])
   return <ThemeProvider><BrowserRouter>
     <Routes>
       <Route path="/signup" element={<Signup/>} />

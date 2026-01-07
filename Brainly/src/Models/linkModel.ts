@@ -33,6 +33,6 @@ const linkSchema=new Schema<ILink>({
 linkSchema.index({user:1,createdAt:-1});
 linkSchema.index({workspace:1});
 linkSchema.index({tags:1});
-linkSchema.index({url:1});
+linkSchema.index({user:1,url:1},{unique:true});
 
 export default mongoose.model<ILink>("Link",linkSchema);

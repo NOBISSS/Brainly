@@ -39,7 +39,8 @@ export const createLink = async (req: Request, res: Response) => {
             const { result } = await ogs({ url, timeout: 3000,onlyGetOpenGraphInfo:true });
             if (result.success) {
                 thumbnail = result.ogImage?.[0]?.url || thumbnail;
-                fetchedTitle = fetchedTitle || result.ogTitle || "Untitled";
+                fetchedTitle =result.ogTitle ||fetchedTitle;
+                console.log("FETCHED TITLE:::",fetchedTitle)
             }
         } catch (error) {
             console.log("OG Fetch Failed for:", url);

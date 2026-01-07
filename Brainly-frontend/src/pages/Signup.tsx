@@ -1,14 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
-import axios from "axios";
-import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { setUserDetails } from "../redux/slices/userSlice";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../redux/store";
 import { api } from "../api/axios";
+import { setUserDetails } from "../redux/slices/userSlice";
 
 export function Signup() {
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -40,7 +38,7 @@ export function Signup() {
     }
 
     // NOTE: if your slice expects { name, email, password } change this accordingly
-    dispatch(setUserDetails({ name, email }));
+    dispatch(setUserDetails({name,email}))
     setLoading(true);
     try {
         await api.post("api/v1/users/sendotp",{ email });
