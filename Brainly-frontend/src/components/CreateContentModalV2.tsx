@@ -9,7 +9,7 @@ import { addLink } from "../redux/slices/linkSlice";
 import { fetchWorkspaces as FetchWorkspacesThunk } from "../redux/slices/workspaceSlice";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
-import type { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { motion } from "framer-motion";
 
 interface CreateContentModalProps {
     open: boolean;
@@ -213,7 +213,7 @@ export function CreateContentModalV2({
                         {/* Workspace Selection */}
                         <select
                             ref={workspaceRef}
-                            className="border p-2 rounded w-full text-sm sm:text-base"
+                            className="border p-2 mb-2 rounded w-full text-sm sm:text-base"
                             value={selectedWorkspace}
                             onChange={(e) => setSelectedWorkspace(e.target.value)}
                         >
@@ -229,7 +229,7 @@ export function CreateContentModalV2({
                     {isFetchingOG && (
                         <p className="text-sm text-gray-500 mt-2">Fetching Preview</p>
                     )}
-                    {
+                    {/* {
                         thumbnail && (
                             <div className="flex gap-3 border rounded-lg p-2 mt-2">
                                 <img
@@ -243,7 +243,34 @@ export function CreateContentModalV2({
                                 </div>
                             </div>
                         )
-                    }
+                    } */}
+                    { thumbnail && (
+                    <motion.div
+                initial={{ y: -10, scale: 0.9 }}
+                animate={{ y: 0, scale: 1 }}
+                style={thumbnail ? {backgroundImage:`url(${thumbnail})`} : undefined}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
+              >
+                <div className="absolute inset-0 bg-black/70 rounded-3xl"></div>
+                <div className="flex justify-between">
+                  <h2 className="relative font-medium text-lg text-white mb-2">
+                    {title}
+                  </h2>
+                </div>
+                <p className="relative text-sm text-gray-200 truncate mt-1">{link}</p>
+                <div className="mt-4">
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-purple-200 relative font-medium hover:text-white cursor-pointer"
+                  >
+                    Open Link →
+                  </a>
+                </div>
+              </motion.div>
+                )}
                     {/* Submit Button */}
                     <div className="flex justify-center mt-5">
                         <Button
