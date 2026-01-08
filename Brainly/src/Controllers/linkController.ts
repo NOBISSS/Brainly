@@ -3,8 +3,9 @@ import Link from "../models/linkModel";
 import Workspace from "../models/workspaceModel"
 import ogs from "open-graph-scraper";
 import mongoose from "mongoose";
-
-const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1764866558045-ee48abd52732?q=80&w=465&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+import { getPlatformThumbnail } from "../utils/getPlantformThumbnail";
+import { getFavicon } from "../utils/getFavicon";
+import { DEFAULT_THUMBNAIL } from "../constants/constant";
 
 //CREATE LINK
 export const createLink = async (req: Request, res: Response) => {
@@ -38,7 +39,7 @@ export const createLink = async (req: Request, res: Response) => {
         try {
             const { result } = await ogs({ url, timeout: 3000,onlyGetOpenGraphInfo:true });
             if (result.success) {
-                thumbnail = result.ogImage?.[0]?.url || thumbnail;
+                thumbnail = result.ogImage?.[0]?.url || getPlatformThumbnail(url) || getFavicon(url) ||DEFAULT_THUMBNAIL;
                 fetchedTitle =result.ogTitle ||fetchedTitle;
                 console.log("FETCHED TITLE:::",fetchedTitle)
             }

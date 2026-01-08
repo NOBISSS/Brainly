@@ -2,6 +2,9 @@ import express from "express";
 import { protect } from "../middlewares/authMiddleware";
 import { createLink, getLinks,deleteLink } from "../controllers/linkController";
 import ogs from "open-graph-scraper";
+import { DEFAULT_THUMBNAIL } from "../constants/constant";
+import { getFavicon } from "../utils/getFavicon";
+import { getPlatformThumbnail } from "../utils/getPlantformThumbnail";
 const router=express.Router();
 
 router.get("/preview",async(req,res)=>{
@@ -15,15 +18,19 @@ router.get("/preview",async(req,res)=>{
             onlyGetOpenGraphInfo:true,
         });
         
+        console.log("URL FROM OG::",result.ogImage?.[0]?.url);
+        let thumbnail = result.ogImage?.[0]?.url || getPlatformThumbnail(String(url)) || getFavicon(String(url)) || DEFAULT_THUMBNAIL;
+        
         return res.json({
             title:result.ogTitle || "",
-            thumbnail:result.ogImage?.[0]?.url || null,
+            thumbnail,
         });
 
     }catch(error){
         return res.json({
             title:"",
-            thumbnail:null
+            thumbnail:getPlatformThumbnail(String(url)) || getFavicon(String(url)) || DEFAULT_THUMBNAIL,
+            error:error
         })
     }
 });
