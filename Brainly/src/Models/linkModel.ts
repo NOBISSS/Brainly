@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface ILink extends Document{
-    user:mongoose.Schema.Types.ObjectId;
+    createdBy:mongoose.Schema.Types.ObjectId;
     title:string;
     url:string;
     category:"YOUTUBE" | "TWEET" | "GOOGLE DOCS" | "ARTICLE" | "GENERAL" | "CANVA";//YT,TWEET,DOC
@@ -13,7 +13,6 @@ export interface ILink extends Document{
 }
 
 const linkSchema=new Schema<ILink>({
-    user:{type:Schema.Types.ObjectId,ref:"User",required:true,index:true},
     title:{type:String,required:true,trim:true},
     url:{type:String,required:true,unique:true},
     thumbnail:{
@@ -27,6 +26,7 @@ const linkSchema=new Schema<ILink>({
     },
     tags:{type:[String],default:[]},
     workspace:{type:Schema.Types.ObjectId,ref:"Workspace",index:true},
+    createdBy:{type:Schema.Types.ObjectId,ref:"User",required:true},
 },{timestamps:true}
 )
 

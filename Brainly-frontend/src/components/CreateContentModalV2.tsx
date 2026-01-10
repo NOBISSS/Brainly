@@ -221,6 +221,7 @@ export function CreateContentModalV2({
                         <Select
                             value={selectedType}
                             onValueChange={(e) => {
+                                console.log("E::", e);
                                 setSelectedType(e);
                                 setIsAutoType(false);
                             }}
@@ -272,18 +273,11 @@ export function CreateContentModalV2({
                                 </option>
                             ))}
                         </select> */}
-                        <Select>
-                            <SelectTrigger className="px-4 py-2
-                                                    w-full
-                                                    m-2
-                                                    border
-                                                    rounded-md
-                                                    bg-blue-100
-                                                    text-sm sm:text-base
-                                                    outline-none
-                                                    focus:ring-2 focus:ring-purple-600
-                                                    transition-all duration-300"
-                                                    >
+                        <Select
+                            value={selectedWorkspace}
+                            onValueChange={(val) => setSelectedWorkspace(val)}
+                        >
+                            <SelectTrigger ref={workspaceRef} className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300">
                                 <SelectValue placeholder="Select a Workspace" />
                             </SelectTrigger>
                             <SelectContent>

@@ -48,7 +48,7 @@ export const createLink = async (req: Request, res: Response) => {
         }
 
         const link = await Link.create({
-            user: req.user._id,
+            createdBy: req.user._id,
             title: fetchedTitle || title,
             url,
             category: String(category).toUpperCase(),
@@ -96,8 +96,8 @@ export const getLinks = async (req: Request, res: Response) => {
         }
 
         const links = await Link.find({ workspace: workspaceId })
+            .populate("createdBy","name avatar")
             .sort({ createdAt: -1 })
-            .select("-__v")
             .lean();
 
         res.status(200).json({
@@ -118,7 +118,7 @@ export const deleteLink = async (req: Request, res: Response) => {
             return res.status(400).json({message:"Invalid Link ID"});
         }
         const userId = req.user._id;
-        const link = await Link.findOne({ _id: id, user: userId });
+        const link = await Link.findOne({ _id: id, createdBy: userId });
         if (!link) {
             return res.status(404).json({
                 message: "Link not found or Not Owned By You"
