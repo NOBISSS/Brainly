@@ -12,7 +12,7 @@ export function Signup() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-
+  const genderRef=useRef<HTMLSelectElement>(null);
   const [loading,setLoading]=useState(false);
 
   const navigate = useNavigate();
@@ -22,7 +22,10 @@ export function Signup() {
     const name = usernameRef.current?.value?.trim();
     const email = emailRef.current?.value?.trim();
     const password = passwordRef.current?.value;
+    const gender = genderRef.current?.value;
 
+
+    //TODO:::ADD GENDER IN VALIDATION ->
     if (!name || !email || !password) {
       toast.error("Please fill all fields");
       return;
