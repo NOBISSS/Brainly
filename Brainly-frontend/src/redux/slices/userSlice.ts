@@ -3,6 +3,7 @@ import { fetchCurrentUser } from "./userThunks";
 interface UserState {
   name: string | null;
   email: string | null;
+  gender: string | null;
   loading:boolean;
 }
 
@@ -10,6 +11,7 @@ interface UserState {
 const initialState:UserState={
     name:null,
     email:null,
+    gender:null,
     loading:false,
 }
 
@@ -20,10 +22,12 @@ const userSlice=createSlice({
         setUserDetails(state,action){
             state.name=action.payload.name;
             state.email=action.payload.email;
+            state.gender=action.payload.gender;
         },
         clearUserDetails(state){
             state.name=null;
             state.email=null;
+            state.gender=null;
         }
     },
     extraReducers:(builder)=> {
@@ -35,6 +39,7 @@ const userSlice=createSlice({
             state.loading=false;
             state.name=action.payload.name;
             state.email=action.payload.email;
+            state.gender=action.payload.gender;
         })
         .addCase(fetchCurrentUser.rejected,(state)=>{
             state.loading=false;

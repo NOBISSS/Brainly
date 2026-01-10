@@ -10,6 +10,11 @@ export interface Link {
     category: string;
     thumbnail?: string;
     tags?: string[];
+    createdBy:{
+        _id:string;
+        name:string;
+        avatar:string;
+    }
     workspace?: string | null;
     createdAt?: string;
 }

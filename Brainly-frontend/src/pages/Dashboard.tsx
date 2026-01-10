@@ -1,7 +1,7 @@
 // src/pages/Dashboard.tsx
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
-import type {  RootState,AppDispatch } from "../redux/store";
+import type { RootState, AppDispatch } from "../redux/store";
 import { Sidebar } from "../components/Sidebar";
 import { Button } from "../components/Button";
 import { PlusIcon } from "../icons/PlusIcon";
@@ -10,9 +10,9 @@ import { CreateContentModal } from "../components/CreateContentModal";
 import { CreateWorkspaceModal } from "../components/CreateWorkspaceModal";
 import { useContent } from "../hooks/useContent";
 import FilterModal from "../components/FilterModal";
-import { MdArrowDropUp, MdDelete,MdArrowDropDown } from "react-icons/md";
+import { MdArrowDropUp, MdDelete, MdArrowDropDown } from "react-icons/md";
 import { DeleteContentModal } from "../components/DeleteContentModal";
-import { deleteLink,type Link } from "../redux/slices/linkSlice";
+import { deleteLink, type Link } from "../redux/slices/linkSlice";
 import toast from "react-hot-toast";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -22,7 +22,7 @@ import { CreateContentModalV2 } from "../components/CreateContentModalV2";
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
 
-    const selectedWorkspace = useSelector(
+  const selectedWorkspace = useSelector(
     (state: RootState) => state.workspaces.selected || null
   );
 
@@ -32,18 +32,18 @@ export default function Dashboard() {
     useState(false);
   const [deleteModalOpen, setDeleteModal] = useState(false);
   const [linkToDelete, setLinkToDelete] = useState<{
-    id:string,
-    title:string,
+    id: string,
+    title: string,
   } | null>(null);
-  
+
   const [showFilter, setShowFilter] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  
-  const { contents, loading, error,refetch } = useContent(
+
+  const { contents, loading, error, refetch } = useContent(
     selectedWorkspace?._id ?? null
   );
 
-   const openDeleteModal = (id: string, title: string) => {
+  const openDeleteModal = (id: string, title: string) => {
     setLinkToDelete({ id, title });
     setDeleteModal(true);
   };
@@ -86,7 +86,7 @@ export default function Dashboard() {
     setSelectedCategories([]);
     setShowFilter(false);
   }, [selectedWorkspace]);
-//bg-linear-to-t from-gray-200 to-white
+  //bg-linear-to-t from-gray-200 to-white
   return (
     <div className="bg-bg flex min-h-screen text-text bg-linear-to-t from-gray-200 to-white">
       {/* Sidebar (desktop + mobile drawer) */}
@@ -148,7 +148,7 @@ export default function Dashboard() {
                 className="cursor-pointer border rounded-md flex gap-3 select-none items-center p-1 px-2 bg-black text-white text-sm md:text-base"
               >
                 Select Category{" "}
-                  {showFilter ? <MdArrowDropUp /> : <MdArrowDropDown />}
+                {showFilter ? <MdArrowDropUp /> : <MdArrowDropDown />}
               </h1>
 
               <FilterModal
@@ -169,18 +169,18 @@ export default function Dashboard() {
           ) : error ? (
             <p className="text-center text-red-500 py-12 col-span-full">{error}</p>
           ) : filteredContents && filteredContents.length > 0 ? (
-            filteredContents.map(({ url, title,thumbnail, _id }) => (
+            filteredContents.map(({ url, title, thumbnail, _id, createdBy }) => (
               <motion.div
                 key={_id}
                 whileHover={{ scale: 1.05 }}
                 layoutId={_id}
                 initial={{ y: -10, scale: 0.9 }}
                 animate={{ y: 0, scale: 1 }}
-                style={thumbnail ? {backgroundImage:`url(${thumbnail})`} : undefined}
+                style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
+                className={`bg-white p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default  bg-cover bg-center relative`}
               >
-                <div className="absolute inset-0 bg-black/70 rounded-3xl"></div>
+                <div className="absolute inset-0 bg-black/70 rounded-3xl "></div>
                 <div className="flex justify-between">
                   <h2 className="relative font-medium text-lg text-white mb-2">
                     {title}
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <p className="relative text-sm text-gray-200 truncate mt-1">{url}</p>
-                <div className="mt-4">
+                <div className="mt-4 flex justify-between">
                   <a
                     href={url}
                     target="_blank"
@@ -204,6 +204,17 @@ export default function Dashboard() {
                   >
                     Open Link →
                   </a>
+                  {createdBy && <div className="relative group">
+                    <img
+                      src={createdBy.avatar}
+                      alt={createdBy.name}
+                      className="w-6 h-6 rounded-full border"
+                    />
+                    <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
+                      {createdBy.name}
+                    </div>
+                  </div>
+                  }
                 </div>
               </motion.div>
             ))

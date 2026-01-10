@@ -119,11 +119,11 @@ export const googleSignin = async (req: Request, res: Response) => {
 export const registerUser = async (req: Request, res: Response) => {
     try {
         
-        const { name, email, password, otp } = req.body;
+        const { name, email, password,gender, otp } = req.body;
         const otpKey=`otp:${email}`;
         const attemptsKey=`otp_attempts:${email}`;
         
-        if (!name || !email || !password || !otp)
+        if (!name || !email || !password || !gender || !otp)
             return res.status(400).json({ success: false, message: "All Fields are required" });
 
         const exists = await User.findOne({ email });
@@ -166,7 +166,7 @@ export const registerUser = async (req: Request, res: Response) => {
         return res.status(201).json({
             success: true,
             message: "User Registered Successfully",
-            data: { user: { name: user.name, email: user.email, token } }
+            data: { user: { name: user.name, email: user.email,gender:user.gender token } }
         });
     } catch (err) {
         console.log(err);

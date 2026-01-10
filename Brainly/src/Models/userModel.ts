@@ -15,7 +15,11 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>({
     name: { type: String, required: true },
-    gender: String,
+    gender:{
+        type:String,
+        enum:["male","female","other"],
+        required:true,
+    },
     email: {
         type: String,
         unique: true,
@@ -24,10 +28,11 @@ const userSchema = new Schema<IUser>({
         trim: true,
         index: true
     },
-    password: { type: String, required: true, minLength: 6 },
+    password: { type: String, required: true, minLength: 6,select:false },
     avatar: {
-        type: String, default: function () {
-            if (this.gender?.toLowerCase() === "male") {
+        type: String,
+        default: function () {
+            if (this.gender === "male") {
                 return "https://res.cloudinary.com/dc9ukfxel/image/upload/v1768054837/portrait-man-cartoon-style_wdsudf.jpg";
             }
             return "https://res.cloudinary.com/dc9ukfxel/image/upload/v1768055060/portrait-3d-female-doctor_zvp3yq.jpg";
