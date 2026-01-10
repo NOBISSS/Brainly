@@ -68,7 +68,7 @@ export function VerifyOTP() {
     try {
       setLoading(true);
       setError(null);
-
+      console.log(name,email,password,gender,otp);
       const res = await axios.post(BACKEND_URL + "api/v1/users/register", {
         name,
         email,

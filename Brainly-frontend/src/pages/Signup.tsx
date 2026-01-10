@@ -53,7 +53,7 @@ export function Signup() {
     }
 
     // NOTE: if your slice expects { name, email, password } change this accordingly
-    dispatch(setUserDetails({name,email,password,gender}))
+    dispatch(setUserDetails({name,email,password,gender:selectedType}))
     setLoading(true);
     try {
         await api.post("api/v1/users/sendotp",{ email });
@@ -91,7 +91,7 @@ export function Signup() {
                             <SelectTrigger
                                 ref={genderRef as any}
                                 className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base capitalize outline-none focus:ring-2  focus:ring-purple-600 transition-all duration-300 not-active:shadow-[2px_3px_2px_1px] transition-all duration-300 ">
-                                <SelectValue placeholder="Select Type" />
+                                <SelectValue placeholder="Select Gender" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup className="capitalize">
