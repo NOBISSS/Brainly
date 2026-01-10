@@ -228,21 +228,9 @@ export function CreateContentModalV2({
                         >
                             <SelectTrigger
                                 ref={typeRef as any}
-                                className="px-4 py-2
-                                            w-full
-                                            m-2
-                                            border
-                                            rounded-md
-                                            bg-blue-100
-                                            text-sm sm:text-base
-                                            capitalize
-                                            outline-none
-                                            focus:ring-2 focus:ring-purple-600
-                                            transition-all duration-300 "
-                            >
+                                className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base capitalize outline-none focus:ring-2  focus:ring-purple-600 transition-all duration-300">
                                 <SelectValue placeholder="Select Type" />
                             </SelectTrigger>
-
                             <SelectContent>
                                 <SelectGroup className="capitalize">
                                     <SelectLabel>Types</SelectLabel>

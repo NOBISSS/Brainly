@@ -5,14 +5,15 @@ import { BACKEND_URL } from "../config";
 import { Button } from "../components/Button";
 import { useSelector } from "react-redux";
 import type { RootState } from "../redux/store";
+import toast from "react-hot-toast";
 
 export function VerifyOTP() {
   const navigate = useNavigate();
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-    const {name,email,password}=useSelector((state:RootState)=>state.user);
-    console.log(name,email,password);
+    const {name,email,password,gender}=useSelector((state:RootState)=>state.user);
+    console.log(name,email,password,gender);
   // refs for each OTP box
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -72,12 +73,12 @@ export function VerifyOTP() {
         name,
         email,
         password,
+        gender,
         otp: code,
-        // you can also send email if needed: email: ...
       });
-
       console.log("OTP VERIFY RESPONSE:: ", res.data);
       // on success -> redirect to dashboard or signin
+      toast.success("Signup Verified Successfully");
       navigate("/dashboard"); // or "/signin" depending on your flow
     } catch (err: any) {
       console.error("OTP VERIFY ERROR:: ", err?.response || err);

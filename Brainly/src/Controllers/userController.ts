@@ -50,7 +50,7 @@ export const sendOTP = async (req: Request, res: Response) => {
 
         const hashedOtp=hashOtp(otp);
 
-        await redis.set(otpKey, hashedOtp, { EX: OTP_TTL });
+        await redis.set(otpKey, hashedOtp, "EX",OTP_TTL);
 
         //reseting attempts counter
         await redis.del(attemptsKey);
@@ -63,10 +63,10 @@ export const sendOTP = async (req: Request, res: Response) => {
             message: "OTP Sent Successfully",
         });
     } catch (error: any) {
-        console.log("Error Occured WHile Sending OTP", error.message);
+        console.log("Error Occured WHile Sending OTP", error);
         res.status(500).json({
             success: false,
-            message: error.message || error
+            message: "Failed to Send OTP"
         });
     }
 }
@@ -123,7 +123,7 @@ export const registerUser = async (req: Request, res: Response) => {
         const otpKey=`otp:${email}`;
         const attemptsKey=`otp_attempts:${email}`;
         
-        if (!name || !email || !password || !gender || !otp)
+        if (!name || !email || !password || !otp)
             return res.status(400).json({ success: false, message: "All Fields are required" });
 
         const exists = await User.findOne({ email });
@@ -166,7 +166,7 @@ export const registerUser = async (req: Request, res: Response) => {
         return res.status(201).json({
             success: true,
             message: "User Registered Successfully",
-            data: { user: { name: user.name, email: user.email,gender:user.gender token } }
+            data: { user: { name: user.name, email: user.email,gender:user.gender, token } }
         });
     } catch (err) {
         console.log(err);

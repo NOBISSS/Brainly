@@ -14,7 +14,7 @@ export const mailSender=async({email,title,body}:emailProps)=>{
             service:"gmail",
             auth:{
                 user:"parthchauhan220@gmail.com",
-                pass:"tbcr mvuz njma vfiw"
+                pass:"ljno poey ruxc qabf"
             }
         })
 

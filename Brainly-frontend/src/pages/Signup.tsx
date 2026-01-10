@@ -7,13 +7,25 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../redux/store";
 import { api } from "../api/axios";
 import { setUserDetails } from "../redux/slices/userSlice";
+import { GENDER } from "@/constants/frConstant";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export function Signup() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const genderRef=useRef<HTMLSelectElement>(null);
+
   const [loading,setLoading]=useState(false);
+  const [selectedType, setSelectedType] = useState("");
 
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -41,7 +53,7 @@ export function Signup() {
     }
 
     // NOTE: if your slice expects { name, email, password } change this accordingly
-    dispatch(setUserDetails({name,email}))
+    dispatch(setUserDetails({name,email,password,gender}))
     setLoading(true);
     try {
         await api.post("api/v1/users/sendotp",{ email });
@@ -69,6 +81,29 @@ export function Signup() {
             <div className="w-full space-y-3">
               <Input type="text" reference={usernameRef} placeholder="Username" />
               <Input type="text" reference={emailRef} placeholder="Email" />
+              <Select
+                            value={selectedType}
+                            onValueChange={(e) => {
+                                console.log("E::", e);
+                                setSelectedType(e);
+                            }}
+                        >
+                            <SelectTrigger
+                                ref={genderRef as any}
+                                className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base capitalize outline-none focus:ring-2  focus:ring-purple-600 transition-all duration-300 not-active:shadow-[2px_3px_2px_1px] transition-all duration-300 ">
+                                <SelectValue placeholder="Select Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup className="capitalize">
+                                    <SelectLabel>Types</SelectLabel>
+                                    {GENDER.map((gender, index) => (
+                                        <SelectItem key={index} value={gender}>
+                                            {gender}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
               <Input
                 type="password"
                 reference={passwordRef}
