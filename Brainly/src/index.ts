@@ -1,5 +1,6 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db";
 import "./queue/emailQueue";
@@ -9,7 +10,6 @@ import cookieParser from "cookie-parser";
 import userRoutes from "./routes/userRoutes";
 import linkRoutes from "./routes/linkRoutes";
 import workspaceRoutes from "./routes/workspaceRoutes";
-dotenv.config();
 
 const app=express();
 app.set("trust proxy",1);

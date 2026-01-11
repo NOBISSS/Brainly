@@ -1,4 +1,7 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+//const resend=new Resend(process.env.RESEND_API_KEY);
 
 interface emailProps {
     email: string;
@@ -6,15 +9,37 @@ interface emailProps {
     body: string;
 }
 
-const MAIL_USER=process.env.MAIL_USER;
-const MAIL_PASS=process.env.MAIL_PASS;
+const MAIL_USER = process.env.MAIL_USER;
+const MAIL_PASS = process.env.MAIL_PASS;
 export const mailSender = async ({ email, title, body }: emailProps) => {
     try {
-        console.log("ENTERED IN MAILSENDER API");
-        const transportor = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false,
+        // console.log("ENTERED IN MAILSENDER API");
+        // const data=await resend.emails.send({
+        //     from:"Brainly <onboarding@resend.dev>",
+        //     to:email,
+        //     subject:title,
+        //     html:body
+        // });
+        // console.log(data);
+        // return data;
+
+        // const transporter = nodemailer.createTransport({
+        //     host: "smtp.gmail.com",
+        //     port: 587,
+        //     secure: false, // MUST be false for 587
+        //     auth: {
+        //         user: process.env.EMAIL_USER,
+        //         pass: process.env.EMAIL_PASS,
+        //     },
+        //     tls: {
+        //         rejectUnauthorized: false,
+        //     },
+        // });
+
+        const transporter = nodemailer.createTransport({
+            //host: "smtp.gmail.com",
+            // port: 587,
+            // secure: false,
             service: "gmail",
             auth: {
                 user: MAIL_USER,
@@ -22,16 +47,18 @@ export const mailSender = async ({ email, title, body }: emailProps) => {
             }
         })
 
-        let info = await transportor.sendMail({
+        
+
+        let info = await transporter.sendMail({
             from: "Brainly",
             to: `${email}`,
             subject: `${title}`,
             html: `${body}`
         })
-
+        console.log("TRANSPORTER:",transporter,"\n info:",info);
         return info;
     } catch (error: any) {
-        console.log("Error occured while sending mail to user", error.message);
+        console.log("Error occured while sending mail to user", error);
         throw error;
     }
 }
