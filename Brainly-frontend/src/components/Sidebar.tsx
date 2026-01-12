@@ -89,7 +89,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       await dispatch(
         removeCollaborator({
           workspaceId: selectedWorkspace._id,
-          memeberId: memberId,
+          memberId: memberId,
         })
       ).unwrap();
       toast.success("Collaborator removed successfully");

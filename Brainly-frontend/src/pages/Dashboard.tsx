@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { CreateContentModalV2 } from "../components/CreateContentModalV2";
+import { DEFAULT_LOGO } from "@/constants/frConstant";
 
 
 export default function Dashboard() {
@@ -204,11 +205,11 @@ export default function Dashboard() {
                   >
                     Open Link →
                   </a>
-                  {createdBy && <div className="relative group">
+                  {createdBy && <div className="relative group flex items-center">
                     <img
-                      src={createdBy.avatar}
+                      src={createdBy.avatar || DEFAULT_LOGO}
                       alt={createdBy.name}
-                      className="w-6 h-6 rounded-full border"
+                      className="w-10 h-10 rounded-full border bg-center bg-clip-content object-center object-cover"
                     />
                     <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
                       {createdBy.name}

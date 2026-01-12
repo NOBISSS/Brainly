@@ -13,29 +13,6 @@ const MAIL_USER = process.env.MAIL_USER;
 const MAIL_PASS = process.env.MAIL_PASS;
 export const mailSender = async ({ email, title, body }: emailProps) => {
     try {
-        // console.log("ENTERED IN MAILSENDER API");
-        // const data=await resend.emails.send({
-        //     from:"Brainly <onboarding@resend.dev>",
-        //     to:email,
-        //     subject:title,
-        //     html:body
-        // });
-        // console.log(data);
-        // return data;
-
-        // const transporter = nodemailer.createTransport({
-        //     host: "smtp.gmail.com",
-        //     port: 587,
-        //     secure: false, // MUST be false for 587
-        //     auth: {
-        //         user: process.env.EMAIL_USER,
-        //         pass: process.env.EMAIL_PASS,
-        //     },
-        //     tls: {
-        //         rejectUnauthorized: false,
-        //     },
-        // });
-
         const transporter = nodemailer.createTransport({
             //host: "smtp.gmail.com",
             // port: 587,
@@ -46,8 +23,6 @@ export const mailSender = async ({ email, title, body }: emailProps) => {
                 pass: MAIL_PASS
             }
         })
-
-        
 
         let info = await transporter.sendMail({
             from: "Brainly",

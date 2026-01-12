@@ -98,6 +98,7 @@ export const addCollaborator = createAsyncThunk("workspace/addCollaborator", asy
 
 export const removeCollaborator = createAsyncThunk("workspace/removeCollaborator", async ({ workspaceId, memberId }: { workspaceId: string, memberId: string }, { rejectWithValue }) => {
     try {
+        console.log("W::"+workspaceId,'M:',memberId);
         const res = await axios.delete(BACKEND_URL + `api/workspaces/${workspaceId}/collaborators/${memberId}`, {
             withCredentials: true
         })

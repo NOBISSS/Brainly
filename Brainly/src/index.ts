@@ -4,7 +4,6 @@ import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db";
 import "./queue/emailQueue";
-import { connectRedis } from "./config/redis";
 import cookieParser from "cookie-parser";
 //Routers
 import userRoutes from "./routes/userRoutes";

@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
         trim: true,
         index: true
     },
-    password: { type: String, required: true, minLength: 6,select:false },
+    password: { type: String, required: true, minLength: 6 },
     avatar: {
         type: String,
         default: function () {
@@ -50,6 +50,7 @@ userSchema.pre("save", async function (next) {
 
 //THIS METHOD IS USED FOR COMPARE PASSWORD
 userSchema.methods.comparePassword = async function (candidate: string) {
+
     return bcrypt.compare(candidate, this.password);
 }
 

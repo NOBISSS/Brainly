@@ -157,11 +157,10 @@ export const registerUser = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid Otp" });
         }
 
-        const user = await User.create({ name, email: email.toLowerCase(), password });
+        const user = await User.create({ name, email: email.toLowerCase(), password,gender });
         await redis.del(`otp:${email}`);
 
         const token = GenerateToken(user._id.toString());
-
 
         return res.status(201).json({
             success: true,
