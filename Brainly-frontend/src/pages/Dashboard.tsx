@@ -18,7 +18,8 @@ import { Menu } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { CreateContentModalV2 } from "../components/CreateContentModalV2";
 import { DEFAULT_LOGO } from "@/constants/frConstant";
-
+import { Card } from "../components/Card";
+import { getCategoryIcon } from "@/utils/getLinkIcon";
 
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -170,7 +171,11 @@ export default function Dashboard() {
           ) : error ? (
             <p className="text-center text-red-500 py-12 col-span-full">{error}</p>
           ) : filteredContents && filteredContents.length > 0 ? (
-            filteredContents.map(({ url, title, thumbnail, _id, createdBy }) => (
+            filteredContents.map((item) => {
+              const { url, title, thumbnail, _id, createdBy, category }=item;
+              console.log(category);
+              const {icon,bg}=getCategoryIcon(category);
+              return(
               <motion.div
                 key={_id}
                 whileHover={{ scale: 1.05 }}
@@ -205,7 +210,13 @@ export default function Dashboard() {
                   >
                     Open Link →
                   </a>
-                  {createdBy && <div className="relative group flex items-center">
+                  {createdBy && <div className="relative group flex items-center gap-4">
+                    {
+                      
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${bg}`}>
+                      {icon}
+                    </div>
+                    }
                     <img
                       src={createdBy.avatar || DEFAULT_LOGO}
                       alt={createdBy.name}
@@ -218,7 +229,7 @@ export default function Dashboard() {
                   }
                 </div>
               </motion.div>
-            ))
+            )})
           ) : (
             <p className="text-gray-500 text-center col-span-full py-12">
               {selectedCategories.length

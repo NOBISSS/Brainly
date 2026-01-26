@@ -21,8 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { WorkspacesIcon } from "@/icons/WorkspacesIcon";
-
+import { LINK_TYPES as types } from "@/constants/frConstant";
 interface CreateContentModalProps {
     open: boolean;
     onClose: () => void;
@@ -34,14 +33,6 @@ export function CreateContentModalV2({
     onClose,
     onSuccess,
 }: CreateContentModalProps) {
-    const types = [
-        "youtube",
-        "twitter",
-        "canva",
-        "Google Docs",
-        "Google Sheets",
-        "PDF/Word File",
-    ];
 
     const lastFetchedUrlRef = useRef<string | null>(null);
     const [isAutoType, setIsAutoType] = useState(false);
@@ -148,6 +139,18 @@ export function CreateContentModalV2({
         onClose();
     }
 
+    const processLink=(value:string)=>{
+        setLink(value);
+        handleLinkChange(value);
+        setThumbnail(null);
+        setIsAutoType(false);
+    }
+
+    useEffect(()=>{
+        if(!link) return;
+        const id=setTimeout(()=>fetchOGPreview(link),400);
+        return ()=>clearTimeout(id);
+    },[link])
 
     useEffect(() => {
         if (!open) return;
@@ -193,17 +196,15 @@ export function CreateContentModalV2({
                             onChange={(e) => setTitle(e.target.value)}
                         />
                         <Input value={link} placeholder="Paste Link here"
-                            onChange={(e) => {
-                                const value = e.target.value || e.clipboardData.getData("text");
-                                
-                                setLink(value)
-                                handleLinkChange(value)
-                                if (value !== lastFetchedUrlRef.current) {
-                                    setThumbnail(null);
-                                }
-                                setIsAutoType(false);
-                            }}
-                            onBlur={() => fetchOGPreview(link)}
+                            // onPaste={(e)=>{
+                            //     const pasted=e.clipboardData.getData("text");
+                            //     if(!pasted) return;
+                            //     processLink(pasted);
+                            //     //small delay so ui update first
+                            //     setTimeout(()=>fetchOGPreview(value),200)
+                            // }}
+                            onChange={(e) => processLink(e.target.value)}
+                            //onBlur={() => fetchOGPreview(link)}
                         />
                         {/* Type Selection */}
                         <Select
@@ -220,10 +221,10 @@ export function CreateContentModalV2({
                                 <SelectValue placeholder="Select Type" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectGroup className="capitalize">
+                                <SelectGroup className="lowercase ">
                                     <SelectLabel>Types</SelectLabel>
                                     {types.map((type, index) => (
-                                        <SelectItem key={index} value={type}>
+                                        <SelectItem key={index} value={type} className="capitalize">
                                             {type}
                                         </SelectItem>
                                     ))}
@@ -287,7 +288,7 @@ export function CreateContentModalV2({
                             initial={{ opacity: 0, y: 20 }}
 animate={{ opacity: 1, y: 0 }}
 transition={{ duration: 0.25 }}
-                            style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
+                            style={thumbnail ? { backgroundImage: `url(${thumbnail || "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=500"})` } : undefined}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
                         >

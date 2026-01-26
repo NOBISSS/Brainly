@@ -38,70 +38,57 @@ export function Card({title,link,type,id,onDeleted}:CardProps){
         
         return null;
     }
-
-
     const handleDelete=()=>{
         setModalOpen(true);//show Modal
     }
-
     const handleConfirmDelete=async()=>{
         dispatch(deleteLink(id));
     }
-    return <div key={id} className="bg-white max-w-80 min-h-60 max-h-140 p-4 rounded-md shadow-md border-gray-300 border">
-            <div className="flex justify-between">
-                <div className="text-md flex gap-4 items-center justify-center">
-                    <ShareIcon/>
+    return <motion.div
+                key={_id}
+                whileHover={{ scale: 1.05 }}
+                layoutId={_id}
+                initial={{ y: -10, scale: 0.9 }}
+                animate={{ y: 0, scale: 1 }}
+                style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`bg-white p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default  bg-cover bg-center relative`}
+              >
+                <div className="absolute inset-0 bg-black/70 rounded-3xl "></div>
+                <div className="flex justify-between">
+                  <h2 className="relative font-medium text-lg text-white mb-2">
                     {title}
+                  </h2>
+                  <div className="relative text-2xl text-red-500 cursor-pointer">
+                    <MdDelete
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(_id!, title);
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="flex gap-2 items-center justify-center text-gray-500">
-                    <a href={link} target="_blank">
-                    <ShareIcon/>
-                    </a>
-                    <DeleteIcon onClick={handleDelete} />
+                <p className="relative text-sm text-gray-200 truncate mt-1">{url}</p>
+                <div className="mt-4 flex justify-between">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-purple-200 relative font-medium hover:text-white cursor-pointer"
+                  >
+                    Open Link →
+                  </a>
+                  {createdBy && <div className="relative group flex items-center">
+                    <img
+                      src={createdBy.avatar || DEFAULT_LOGO}
+                      alt={createdBy.name}
+                      className="w-10 h-10 rounded-full border bg-center bg-clip-content object-center object-cover"
+                    />
+                    <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
+                      {createdBy.name}
+                    </div>
+                  </div>
+                  }
                 </div>
-                
-            </div>
-            <div className="p-4">
-            {type==="youtube" && (()=>{
-                const embedUrl=getYouTubeEmbedUrl(link);
-                return embedUrl ? (
-                     <iframe
-                    className="w-full rounded-md"
-                    src={embedUrl}
-                    title={title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-            />
-                ) :(
-                    <p className="text-red-500 text-sm">Invalid YouTube URL</p>
-                );
-            })()}
-            {type==="twitter" &&
-            <blockquote className="twitter-tweet  w-1/8 h-1/8"><a href={link.replace("x.com","twitter.com")}></a></blockquote> 
-            }
-            {type==="canva" &&(
-                <iframe src={link.includes("?embed") ? link : link.endsWith("/view") ? `${link}?embed`:link} className="w-full h-96 rounded-md"
-                allowFullScreen referrerPolicy="no-referrer"></iframe>
-            )
-            }
-            {type==="Google Docs" &&(
-                <iframe src={link.replace("edit","preview")} className="w-full h-96 rounded-md"
-                allowFullScreen referrerPolicy="no-referrer"></iframe>
-            )
-            }
-            {type==="Google Sheets" &&(
-                <iframe src={link.replace("edit","preview")} className="w-full h-96 rounded-md"
-                allowFullScreen referrerPolicy="no-referrer"></iframe>
-            )
-            }
-            </div>
-             {/* ✅ Render modal below the card */}
-        <DeleteContentModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        contentTitle={title}
-      />
-    </div>
+              </motion.div>
 }
