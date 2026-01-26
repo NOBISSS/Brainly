@@ -121,7 +121,11 @@ export function CreateContentModalV2({
     //   onClose();
     // };
     const createLink = () => {
-
+        if (!selectedWorkspace) {
+            toast.error("Choose a workspace first");
+            workspaceRef.current?.focus();
+            return;
+        }
         if (!link || !selectedWorkspace) {
             console.log(link, selectedWorkspace);
             toast.error("Please Fill All Required Details")
@@ -190,7 +194,8 @@ export function CreateContentModalV2({
                         />
                         <Input value={link} placeholder="Paste Link here"
                             onChange={(e) => {
-                                const value = e.target.value;
+                                const value = e.target.value || e.clipboardData.getData("text");
+                                
                                 setLink(value)
                                 handleLinkChange(value)
                                 if (value !== lastFetchedUrlRef.current) {
@@ -200,24 +205,7 @@ export function CreateContentModalV2({
                             }}
                             onBlur={() => fetchOGPreview(link)}
                         />
-
                         {/* Type Selection */}
-                        {/* <select
-                            ref={typeRef}
-                            className="border p-2 rounded w-full text-sm sm:text-base"
-                            value={selectedType}
-                            onChange={(e) => {
-                                setSelectedType(e.target.value)
-                                setIsAutoType(false);
-                            }}
-                        >
-                            <option value="">Select Type</option>
-                            {types.map((type, index) => (
-                                <option key={index} value={type}>
-                                    {type}
-                                </option>
-                            ))}
-                        </select> */}
                         <Select
                             value={selectedType}
                             onValueChange={(e) => {
@@ -248,24 +236,11 @@ export function CreateContentModalV2({
                             </p>
                         )}
                         {/* Workspace Selection */}
-                        {/* <select
-                            ref={workspaceRef}
-                            className="border p-2 mb-2 rounded w-full text-sm sm:text-base"
-                            value={selectedWorkspace}
-                            onChange={(e) => setSelectedWorkspace(e.target.value)}
-                        >
-                            <option value="">Select Workspace</option>
-                            {workspace.map((ws: any) => (
-                                <option key={ws._id} value={ws._id}>
-                                    {ws.name}
-                                </option>
-                            ))}
-                        </select> */}
                         <Select
                             value={selectedWorkspace}
                             onValueChange={(val) => setSelectedWorkspace(val)}
                         >
-                            <SelectTrigger ref={workspaceRef} className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300">
+                            <SelectTrigger ref={workspaceRef} className={`px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300 ${!selectedWorkspace ? "border-red-400":"border-gray-200"}`}>
                                 <SelectValue placeholder="Select a Workspace" />
                             </SelectTrigger>
                             <SelectContent>
@@ -280,8 +255,18 @@ export function CreateContentModalV2({
                     </div>
                     {/*PREVIEW*/}
                     {isFetchingOG && (
-                        <p className="text-sm text-gray-500 mt-2">Fetching Preview</p>
-                    )}
+                        <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="flex items-center gap-2 text-sm text-gray-500 mt-2"
+                        >
+                            {/* Spinner */}
+                            <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                            <span>Fetching preview...</span>
+                        </motion.div>
+                    )
+                    }
                     {/* {
                         thumbnail && (
                             <div className="flex gap-3 border rounded-lg p-2 mt-2">
@@ -299,8 +284,9 @@ export function CreateContentModalV2({
                     } */}
                     {thumbnail && (
                         <motion.div
-                            initial={{ y: -10, scale: 0.9 }}
-                            animate={{ y: 0, scale: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+animate={{ opacity: 1, y: 0 }}
+transition={{ duration: 0.25 }}
                             style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
@@ -329,8 +315,10 @@ export function CreateContentModalV2({
                         <Button
                             onClick={createLink}
                             variant="Primary"
-                            text="Submit"
+                            text={selectedWorkspace ? "Submit" : "Select Workspace First"}
                             fullWidth={true}
+                            onKeyDown={(e) => e.key === "Enter" && createLink()}
+                            disabled={!selectedWorkspace}
                         />
                     </div>
                 </div>
