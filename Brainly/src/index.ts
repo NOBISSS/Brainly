@@ -35,8 +35,6 @@ app.use(
   })
 );
 
-
-
 // allow prefligh
 //app.options("/*",cors());
 
