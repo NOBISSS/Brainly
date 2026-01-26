@@ -1,10 +1,5 @@
-import { ShareIcon } from "../icons/ShareIcon";
-import { DeleteIcon } from "../icons/DeleteIcon";
-import { DeleteContentModal } from "./DeleteContentModal";
+
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { BACKEND_URL } from "../config";
-import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { deleteLink } from "../redux/slices/linkSlice";
 interface CardProps{
