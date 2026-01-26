@@ -19,7 +19,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { CreateContentModalV2 } from "../components/CreateContentModalV2";
 import { DEFAULT_LOGO } from "@/constants/frConstant";
 import { Card } from "../components/Card";
-import { getCategoryIcon } from "@/utils/getLinkIcon";
+import { getCategoryIcon } from "@/utils/getCategoryIcon";
 
 export default function Dashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const selectedWorkspace = useSelector(
     (state: RootState) => state.workspaces.selected || null
   );
+  const user = useSelector((state: RootState) => state.user);
 
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar
   const [modalOpen, setModalOpen] = useState(false);
@@ -172,64 +173,64 @@ export default function Dashboard() {
             <p className="text-center text-red-500 py-12 col-span-full">{error}</p>
           ) : filteredContents && filteredContents.length > 0 ? (
             filteredContents.map((item) => {
-              const { url, title, thumbnail, _id, createdBy, category }=item;
+              const { url, title, thumbnail, _id, createdBy, category } = item;
               console.log(category);
-              const {icon,bg}=getCategoryIcon(category);
-              return(
-              <motion.div
-                key={_id}
-                whileHover={{ scale: 1.05 }}
-                layoutId={_id}
-                initial={{ y: -10, scale: 0.9 }}
-                animate={{ y: 0, scale: 1 }}
-                style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`bg-white p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default  bg-cover bg-center relative`}
-              >
-                <div className="absolute inset-0 bg-black/70 rounded-3xl "></div>
-                <div className="flex justify-between">
-                  <h2 className="relative font-medium text-lg text-white mb-2">
-                    {title}
-                  </h2>
-                  <div className="relative text-2xl text-red-500 cursor-pointer">
-                    <MdDelete
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(_id!, title);
-                      }}
-                    />
+              const { icon, bg } = getCategoryIcon(category);
+              return (
+                <motion.div
+                  key={_id}
+                  whileHover={{ scale: 1.05 }}
+                  layoutId={_id}
+                  initial={{ y: -10, scale: 0.9 }}
+                  animate={{ y: 0, scale: 1 }}
+                  style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className={`bg-white p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default  bg-cover bg-center relative`}
+                >
+                  <div className="absolute inset-0 bg-black/70 rounded-3xl "></div>
+                  <div className="flex justify-between">
+                    <h2 className="relative font-medium text-lg text-white mb-2">
+                      {title}
+                    </h2>
+                    <div className="relative text-2xl text-red-500 cursor-pointer">
+                      <MdDelete
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteModal(_id!, title);
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <p className="relative text-sm text-gray-200 truncate mt-1">{url}</p>
-                <div className="mt-4 flex justify-between">
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-purple-200 relative font-medium hover:text-white cursor-pointer"
-                  >
-                    Open Link →
-                  </a>
-                  {createdBy && <div className="relative group flex items-center gap-4">
-                    {
-                      
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${bg}`}>
-                      {icon}
+                  <p className="relative text-sm text-gray-200 truncate mt-1">{url}</p>
+                  <div className="mt-4 flex justify-between">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-purple-200 relative font-medium hover:text-white cursor-pointer"
+                    >
+                      Open Link →
+                    </a>
+                    {createdBy && <div className="relative flex items-center gap-4">
+                      <div className="group">
+                        <img
+                          src={createdBy.avatar || DEFAULT_LOGO}
+                          alt={createdBy.name == user.name ? "me" : createdBy.name}
+                          className="w-10 h-10 rounded-full border bg-center bg-clip-content object-center object-cover"
+                        />
+                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${bg}`}>
+                          {icon}
+                        </div>
+                        <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
+                          {createdBy.name == user.name ? "ME" : createdBy.name}
+                        </div>
+                      </div>
                     </div>
                     }
-                    <img
-                      src={createdBy.avatar || DEFAULT_LOGO}
-                      alt={createdBy.name}
-                      className="w-10 h-10 rounded-full border bg-center bg-clip-content object-center object-cover"
-                    />
-                    <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
-                      {createdBy.name}
-                    </div>
                   </div>
-                  }
-                </div>
-              </motion.div>
-            )})
+                </motion.div>
+              )
+            })
           ) : (
             <p className="text-gray-500 text-center col-span-full py-12">
               {selectedCategories.length

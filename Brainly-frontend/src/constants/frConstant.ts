@@ -5,6 +5,6 @@ export const LINK_TYPES=[
         "twitter",
         "canva",
         "Google Docs",
-        "Google Sheets",
+        "Google Sheet",
         "PDF/Word File",
     ];

@@ -129,7 +129,7 @@ export function CreateContentModalV2({
             addLink({
                 title: title || "Untitled",
                 url: link,
-                category: type,
+                category: type.toUpperCase(),
                 workspace: selectedWorkspace
             })
         )
