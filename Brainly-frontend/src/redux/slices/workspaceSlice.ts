@@ -47,7 +47,6 @@ export const fetchWorkspaces = createAsyncThunk("workspaces/fetchAll", async (_,
 
 //Create Workspace
 export const createWorkspace = createAsyncThunk("workspaces/create", async ({ name, description }: { name: string, description: string }, { rejectWithValue }) => {
-    console.log(name, description);
     try {
         const res = await axios.post(`${BACKEND_URL}api/workspaces`, { name, description }, {
             withCredentials: true
@@ -68,6 +67,7 @@ export const deleteWorkspace = createAsyncThunk("workspace/delete", async (id: s
         })
         return id;
     } catch (error) {
+        console.log("CALLINGIN: ERROR::::", error);
         return rejectWithValue(error?.response?.data?.message || "Failed to delete Workspaces");
     }
 })
@@ -98,7 +98,7 @@ export const addCollaborator = createAsyncThunk("workspace/addCollaborator", asy
 
 export const removeCollaborator = createAsyncThunk("workspace/removeCollaborator", async ({ workspaceId, memberId }: { workspaceId: string, memberId: string }, { rejectWithValue }) => {
     try {
-        console.log("W::"+workspaceId,'M:',memberId);
+        console.log("W::" + workspaceId, 'M:', memberId);
         const res = await axios.delete(BACKEND_URL + `api/workspaces/${workspaceId}/collaborators/${memberId}`, {
             withCredentials: true
         })
@@ -118,6 +118,36 @@ const workspaceSlice = createSlice({
         },
         clearError: (state) => {
             state.error = null;
+        },
+
+        socketWorkspaceCreated: (state, action) => {
+            const exists = state.list.some(
+                (w) => w._id === action.payload._id
+            );
+
+            if (!exists) {
+                state.list.unshift(action.payload);
+            }
+        },
+
+
+        socketMemberAdded: (state, action: PayloadAction<Member>) => {
+            if (!state.selected) return;
+            state.selected.members.push(action.payload);
+        },
+
+        socketMemberRemoved: (state, action: PayloadAction<string>) => {
+            if (!state.selected) return;
+            state.selected.members = state.selected.members.filter(
+                (m) => m._id !== action.payload
+            );
+        },
+
+        socketWorkspaceDeleted: (state, action: PayloadAction<string>) => {
+            state.list = state.list.filter((w) => w._id !== action.payload);
+            if (state.selected?._id === action.payload) {
+                state.selected = null;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -141,7 +171,7 @@ const workspaceSlice = createSlice({
             })
             .addCase(createWorkspace.fulfilled, (state, action) => {
                 state.loading = false;
-                state.list.unshift(action.payload);
+                //state.list.unshift(action.payload);
             })
             .addCase(createWorkspace.rejected, (state, action) => {
                 state.loading = false;
@@ -211,5 +241,11 @@ const workspaceSlice = createSlice({
             })
     },
 })
-export const { setSelectedWorkspaces, clearError, Workspace } = workspaceSlice.actions;
+export const { setSelectedWorkspaces,
+    clearError,
+    socketWorkspaceCreated,
+    socketWorkspaceDeleted,
+    socketMemberAdded,
+    socketMemberRemoved
+} = workspaceSlice.actions;
 export default workspaceSlice.reducer;

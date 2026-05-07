@@ -45,11 +45,11 @@ export const fetchLinksByWorkspace = createAsyncThunk("links/fetchLinks", async 
 
 export const addLink = createAsyncThunk("links/addLink", async (linkData: Partial<Link>, { rejectWithValue }) => {
     try {
-        console.log(linkData);
+        
         const res = await axios.post(`${BACKEND_URL}api/links/create`, linkData, {
             withCredentials: true
         })
-        console.log(res);
+        
         return res.data.data;
     } catch (error: any) {
         console.log("IN CATCH BLOCK",error)
@@ -108,12 +108,12 @@ const linkSlice = createSlice({
                 state.loading = false;
                 const link = action.payload as Link;
                 const wsId = link.workspace;
-                console.log(state);
+                
                 if (wsId) {
                     if (!state.byWorkspace[wsId]) {
                         state.byWorkspace[wsId] = [];
                     }
-                    state.byWorkspace[wsId].unshift(link);
+                    state.byWorkspace[wsId] = [link, ...state.byWorkspace[wsId]];
                 } else {
                     state.personal.unshift(link);
                 }

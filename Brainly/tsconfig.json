@@ -1,3 +1,5 @@
+//TODO:"typeRoots": ["./node_modules/@types", "./types"]
+
 {
   "compilerOptions": {
     "rootDir": "./src",
@@ -6,8 +8,9 @@
     "target": "ES2020",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["./src/types", "./node_modules/@types"],
-    "strict": true
+    "strict": true,
+    "types": ["node", "react"],
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }

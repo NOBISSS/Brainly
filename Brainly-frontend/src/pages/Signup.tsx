@@ -22,7 +22,7 @@ export function Signup() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const genderRef=useRef<HTMLSelectElement>(null);
+  //const genderRef=useRef<HTMLSelectElement>(null);
 
   const [loading,setLoading]=useState(false);
   const [selectedType, setSelectedType] = useState("");
@@ -34,7 +34,7 @@ export function Signup() {
     const name = usernameRef.current?.value?.trim();
     const email = emailRef.current?.value?.trim();
     const password = passwordRef.current?.value;
-    const gender = genderRef.current?.value;
+    const gender = selectedType;
 
 
     //TODO:::ADD GENDER IN VALIDATION ->
@@ -53,6 +53,7 @@ export function Signup() {
     }
 
     // NOTE: if your slice expects { name, email, password } change this accordingly
+    console.log("DETAILS:",name,email,password,gender);
     dispatch(setUserDetails({name,email,password,gender:selectedType}))
     setLoading(true);
     try {
@@ -89,7 +90,7 @@ export function Signup() {
                             }}
                         >
                             <SelectTrigger
-                                ref={genderRef as any}
+                                //ref={genderRef as any}
                                 className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base capitalize outline-none focus:ring-2  focus:ring-purple-600 transition-all duration-300 not-active:shadow-[2px_3px_2px_1px] transition-all duration-300 ">
                                 <SelectValue placeholder="Select Gender" />
                             </SelectTrigger>

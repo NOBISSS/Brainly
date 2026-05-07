@@ -1,6 +1,7 @@
-import { LinkCard } from "./LinkCard";
+import { memo } from "react";
+import LinkCard from "./LinkCard";
 
-export function LinkGrid({ links, loading, error, onDelete, user }) {
+function LinkGrid({ links, loading, error, onDelete, user }) {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
@@ -17,3 +18,5 @@ export function LinkGrid({ links, loading, error, onDelete, user }) {
     </div>
   );
 }
+
+export default memo(LinkGrid);

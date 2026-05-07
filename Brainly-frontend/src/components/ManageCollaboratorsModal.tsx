@@ -1,3 +1,4 @@
+//src/components/ManageCollaboratorsModal.tsx
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash2 } from "lucide-react";
 import { Workspace } from "../redux/slices/workspaceSlice";
@@ -19,7 +20,7 @@ export const ManageCollaboratorsModal = ({
 }: ManageCollaboratorsModalProps) => {
 
   const handleRemove = (memberId: string, email: string) => {
-    console.log("O M:",memberId);
+    //console.log("O M:",memberId);
     if (confirm(`Remove ${email} from ${workspace.name}?`)) {
       onRemove(memberId);
     }
@@ -54,6 +55,10 @@ export const ManageCollaboratorsModal = ({
                 <button onClick={onClose}>
                   <X size={20} className="text-gray-500 hover:text-gray-700" />
                 </button>
+                
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-red-600">Owner:<span className="text-black">{workspace.owner.name}</span></h1>
               </div>
 
               {workspace.members && workspace.members.length > 0 ? (

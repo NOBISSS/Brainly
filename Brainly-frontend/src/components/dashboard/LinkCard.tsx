@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MdDelete } from "react-icons/md";
 import { DEFAULT_LOGO } from "@/constants/frConstant";
 import { getCategoryIcon } from "@/utils/getCategoryIcon";
+import { memo } from "react";
 
 interface Props {
   link: any;
@@ -9,20 +10,28 @@ interface Props {
   onDelete: (id: string, title: string) => void;
 }
 
-export function LinkCard({ link, user, onDelete }: Props) {
+function LinkCard({ link, user, onDelete }: Props) {
   const { url, title, thumbnail, _id, createdBy, category } = link;
-
   const { icon, bg } = getCategoryIcon(category);
 
   return (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      initial={{ y: -10, scale: 0.9 }}
-      animate={{ y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
-      className="bg-white p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg bg-cover bg-center relative"
+      whileHover={{ scale: 1.03 }}
+      // initial={{ y: -10, scale: 0.9 }}
+      // animate={{ y: 0, scale: 1 }}
+      //transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{ duration: 0.15 }}
+      //style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
+      className="bg-white will-change-transform p-5 flex flex-col justify-evenly rounded-2xl shadow-sm hover:shadow-lg bg-cover bg-center relative"
     >
+      {thumbnail && (
+  <img
+    src={thumbnail}
+    loading="lazy"
+    className="absolute inset-0 w-full h-full object-cover rounded-3xl"
+  />
+)}
+
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/70 rounded-3xl" />
 
@@ -71,7 +80,7 @@ export function LinkCard({ link, user, onDelete }: Props) {
 
             {/* Tooltip */}
             <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
-              {createdBy.name === user.name ? "ME" : createdBy.name}
+              {createdBy?.name === user?.name ? "ME" : createdBy?.name}
             </div>
           </div>
         )}
@@ -79,3 +88,5 @@ export function LinkCard({ link, user, onDelete }: Props) {
     </motion.div>
   );
 }
+
+export default memo(LinkCard);

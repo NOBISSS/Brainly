@@ -1,3 +1,11 @@
+// {
+//   "rewrites": [
+//     {
+//       "source": "/api/:path*",
+//       "destination": "http://13.62.231.216:3000/api/:path*"
+//     }
+//   ]
+// }
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

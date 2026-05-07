@@ -43,7 +43,7 @@ export function ProtectedRoutes() {
 
     //if not authorized
     if (status === "Unauthorized") {
-        return <Navigate to="/signin" replace />
+        return <Navigate to="/home" replace />
     }
 
     //if authorized

@@ -9,7 +9,6 @@ export const fetchCurrentUser = createAsyncThunk(
     const res = await axios.get(BACKEND_URL+"api/v1/users/profile", {
       withCredentials: true, // if using cookies
     });
-    console.log("CALLED");
     return res.data.data;
   }
 );

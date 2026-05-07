@@ -3,35 +3,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-
+import {socket} from "../socket/socket";
 import type { RootState, AppDispatch } from "@/redux/store";
 import { deleteLink, type Link } from "@/redux/slices/linkSlice";
 
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { LinkGrid } from "@/components/dashboard/LinkGrid";
+import LinkGrid from "@/components/dashboard/LinkGrid";
 import { CreateContentModalV2 } from "@/components/CreateContentModalV2";
 import { DeleteContentModal } from "@/components/DeleteContentModal";
-
+import {
+  socketMemberAdded,
+  socketMemberRemoved
+} from "../redux/slices/workspaceSlice";
 import { useContent } from "@/hooks/useContent";
 import { CreateWorkspaceModal } from "@/components/CreateWorkspaceModal";
 
 export default function DashboardV2() {
   const dispatch = useDispatch<AppDispatch>();
 
-  /* ---------------------------------------------------------------- */
-  /* Redux State                                                      */
-  /* ---------------------------------------------------------------- */
-
   const selectedWorkspace = useSelector(
     (state: RootState) => state.workspaces.selected || null
   );
 
-  const user = useSelector((state: RootState) => state.user);
-
-  /* ---------------------------------------------------------------- */
-  /* Local UI State (ONLY UI stuff lives here)                        */
-  /* ---------------------------------------------------------------- */
+  const user = useSelector((state: RootState) => state.user.user);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -44,17 +39,9 @@ export default function DashboardV2() {
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  /* ---------------------------------------------------------------- */
-  /* Data Fetching                                                    */
-  /* ---------------------------------------------------------------- */
-
   const { contents, loading, error, refetch } = useContent(
     selectedWorkspace?._id ?? null
   );
-
-  /* ---------------------------------------------------------------- */
-  /* Actions                                                          */
-  /* ---------------------------------------------------------------- */
 
   const openDeleteModal = (id: string, title: string) => {
     setLinkToDelete({ id, title });
@@ -73,7 +60,7 @@ export default function DashboardV2() {
       setLinkToDelete(null);
       refetch();
     } catch (err: any) {
-      toast.error(err?.message || "Delete failed");
+      toast.error(err || "Delete failed");
     }
   };
 
@@ -84,10 +71,6 @@ export default function DashboardV2() {
         : [...prev, cat]
     );
   };
-
-  /* ---------------------------------------------------------------- */
-  /* Derived Data                                                     */
-  /* ---------------------------------------------------------------- */
 
   const filteredContents = useMemo(() => {
     if (!selectedCategories.length) return contents;
@@ -101,17 +84,43 @@ export default function DashboardV2() {
     return [...new Set(contents.map((c: Link) => c.category))];
   }, [contents]);
 
-  /* ---------------------------------------------------------------- */
-  /* Reset filters when workspace changes                             */
-  /* ---------------------------------------------------------------- */
-
   useEffect(() => {
     setSelectedCategories([]);
   }, [selectedWorkspace]);
 
-  /* ---------------------------------------------------------------- */
-  /* Render                                                           */
-  /* ---------------------------------------------------------------- */
+  useEffect(() => {
+  const workspaceId = selectedWorkspace?._id;
+
+  if (!workspaceId) return;
+
+  /* 🔥 JOIN ROOM (MOST IMPORTANT LINE) */
+  socket.emit("joinWorkspace", workspaceId);
+  console.log("Joined workspace room:", workspaceId);
+
+  socket.on("memberAdded", (member) => {
+    dispatch(socketMemberAdded(member));
+  });
+
+  socket.on("memberRemoved", (userId) => {
+    dispatch(socketMemberRemoved(userId));
+  });
+
+  return () => {
+    socket.off("memberAdded");
+    socket.off("memberRemoved");
+  };
+
+}, [selectedWorkspace?._id]);
+
+  useEffect(() => {
+  if (!user?._id) return;
+
+  socket.emit("joinUser", user._id);
+  console.log("Joined user room:", user._id);
+
+}, [user?._id]);
+
+
 
   return (
     <div className="flex min-h-screen bg-linear-to-t from-gray-200 to-white">

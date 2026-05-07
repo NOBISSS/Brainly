@@ -4,7 +4,7 @@ import { Input } from "./Input";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { detectLinkType } from "../utils/detectLinkType";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addLink } from "../redux/slices/linkSlice";
 import { fetchWorkspaces as FetchWorkspacesThunk } from "../redux/slices/workspaceSlice";
 import axios from "axios";
@@ -46,9 +46,8 @@ export function CreateContentModalV2({
     const typeRef = useRef<HTMLSelectElement>(null);
     const workspaceRef = useRef<HTMLSelectElement>(null);
     const dispatch = useDispatch();
-
+    const SelectedWorkspace = useSelector((state) => state.workspaces?.selected) || "";
     const fetchOGPreview = async (url: string) => {
-        console.log("CALLED");
         if (!url) return;
 
         //prevent duplicate calling
@@ -62,7 +61,7 @@ export function CreateContentModalV2({
 
         try {
             const res = await axios.get(BACKEND_URL + `api/links/preview?url=${url}`, { withCredentials: true });
-            console.log(res);
+            //console.log(res);
             if (res.data.title && !title) setTitle(res.data.title);
             if (res.data.thumbnail && !thumbnail) setThumbnail(res.data.thumbnail);
         } catch (error) {
@@ -86,31 +85,6 @@ export function CreateContentModalV2({
         }
     };
 
-
-    //   const createLink = () => {
-    //   const title = titleRef.current?.value;
-    //   const link = linkRef.current?.value;
-    //   const type = selectedType || detectLinkType(link || "");
-    //   const workspaceId = selectedWorkspace;
-
-    //   if (!title || !link || !type || !workspaceId) {
-    //     toast.error("Please fill all required details");
-    //     return;
-    //   }
-
-    //   dispatch(
-    //     addLink({
-    //       title,
-    //       url: link,
-    //       category: type,
-    //       workspace: workspaceId,
-    //     })
-    //   );
-
-    //   toast.success("Link created successfully");
-    //   onSuccess?.();
-    //   onClose();
-    // };
     const createLink = () => {
         if (!selectedWorkspace) {
             toast.error("Choose a workspace first");
@@ -118,7 +92,6 @@ export function CreateContentModalV2({
             return;
         }
         if (!link || !selectedWorkspace) {
-            console.log(link, selectedWorkspace);
             toast.error("Please Fill All Required Details")
             return;
         }
@@ -139,25 +112,31 @@ export function CreateContentModalV2({
         onClose();
     }
 
-    const processLink=(value:string)=>{
+    const processLink = (value: string) => {
         setLink(value);
         handleLinkChange(value);
         setThumbnail(null);
         setIsAutoType(false);
     }
 
-    useEffect(()=>{
-        if(!link) return;
-        const id=setTimeout(()=>fetchOGPreview(link),400);
-        return ()=>clearTimeout(id);
-    },[link])
+    useEffect(() => {
+        if (!link) return;
+        const id = setTimeout(() => fetchOGPreview(link), 400);
+        return () => clearTimeout(id);
+    }, [link])
+
+    useEffect(() => {
+        if (open && SelectedWorkspace?._id) {
+            setSelectedWorkspace(SelectedWorkspace._id);
+        }
+    }, [open, SelectedWorkspace]);
+
 
     useEffect(() => {
         if (!open) return;
         const fetchWorkspaces = async () => {
             try {
                 const workspacesData = await dispatch(FetchWorkspacesThunk()).unwrap();
-                console.log(workspacesData)
                 setWorkspaces(workspacesData);
             } catch (error) {
                 console.log("Failed to Fetch Workspaces", error);
@@ -192,25 +171,13 @@ export function CreateContentModalV2({
 
                     {/* Inputs */}
                     <div className="space-y-3 flex flex-col">
-                        <Input value={title} placeholder="Title (auto later)"
-                            onChange={(e) => setTitle(e.target.value)}
-                        />
                         <Input value={link} placeholder="Paste Link here"
-                            // onPaste={(e)=>{
-                            //     const pasted=e.clipboardData.getData("text");
-                            //     if(!pasted) return;
-                            //     processLink(pasted);
-                            //     //small delay so ui update first
-                            //     setTimeout(()=>fetchOGPreview(value),200)
-                            // }}
                             onChange={(e) => processLink(e.target.value)}
-                            //onBlur={() => fetchOGPreview(link)}
                         />
                         {/* Type Selection */}
                         <Select
                             value={selectedType}
                             onValueChange={(e) => {
-                                console.log("E::", e);
                                 setSelectedType(e);
                                 setIsAutoType(false);
                             }}
@@ -241,7 +208,7 @@ export function CreateContentModalV2({
                             value={selectedWorkspace}
                             onValueChange={(val) => setSelectedWorkspace(val)}
                         >
-                            <SelectTrigger ref={workspaceRef} className={`px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300 ${!selectedWorkspace ? "border-red-400":"border-gray-200"}`}>
+                            <SelectTrigger ref={workspaceRef} className={`px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300 ${!selectedWorkspace ? "border-red-400" : "border-gray-200"}`}>
                                 <SelectValue placeholder="Select a Workspace" />
                             </SelectTrigger>
                             <SelectContent>
@@ -253,6 +220,9 @@ export function CreateContentModalV2({
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
+                        <Input value={title} placeholder="Title (auto later)"
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
                     </div>
                     {/*PREVIEW*/}
                     {isFetchingOG && (
@@ -268,26 +238,12 @@ export function CreateContentModalV2({
                         </motion.div>
                     )
                     }
-                    {/* {
-                        thumbnail && (
-                            <div className="flex gap-3 border rounded-lg p-2 mt-2">
-                                <img
-                                    src={thumbnail}
-                                    className="w-16 h-16 object-cover rounded"
-                                    alt="preview"
-                                />
-                                <div>
-                                    <p className="font-semibold line-clamp-2">{title}</p>
-                                    <p className="text-xs text-gray-400 uppercase">{selectedType}</p>
-                                </div>
-                            </div>
-                        )
-                    } */}
+
                     {thumbnail && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
-animate={{ opacity: 1, y: 0 }}
-transition={{ duration: 0.25 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            //transition={{ duration: 0.25 }}
                             style={thumbnail ? { backgroundImage: `url(${thumbnail || "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=500"})` } : undefined}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}

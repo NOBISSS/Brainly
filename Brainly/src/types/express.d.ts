@@ -1,10 +1,13 @@
 import { IUser } from "../models/userModel";
-import { Types } from "mongoose";
+import { IWorkspace } from "../models/workspaceModel";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: IUser & { _id: Types.ObjectId };
+      user?: IUser;
+      workspace?:IWorkspace
     }
   }
 }
+
+export {};

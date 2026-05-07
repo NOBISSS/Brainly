@@ -56,12 +56,12 @@ export function useContent(workspaceId:string|null):useContentReturn {
 
     
     const refetch=useCallback(()=>{
-        console.log("CALLING REFRESH AGAIN AND AGAIN");
+        //console.log("CALLING REFRESH AGAIN AND AGAIN");
         fetchLinks(true);
     },[fetchLinks])
 
     useEffect(()=>{
-        console.log("CALLING USEEFFECT AGAIN AND AGAIN");
+        //console.log("CALLING USEEFFECT AGAIN AND AGAIN");
         fetchLinks();
     },[fetchLinks]);
 

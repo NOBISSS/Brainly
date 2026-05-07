@@ -1,13 +1,19 @@
 @import "tailwindcss";
-@font-face {
+/* @font-face {
     font-family: "Helvetica";
     src: url(../../helvetica-255/Helvetica.ttf);
 }
 *{
      font-family: "Helvetica";   
+} */
+
+html {
+  scroll-behavior: smooth;
 }
 
-
+section {
+  scroll-margin-top: 80px;
+}
 
 
 :root {
