@@ -22,6 +22,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { LINK_TYPES as types } from "@/constants/frConstant";
+import {socket} from "../socket/socket";
+
 interface CreateContentModalProps {
     open: boolean;
     onClose: () => void;
@@ -85,7 +87,7 @@ export function CreateContentModalV2({
         }
     };
 
-    const createLink = () => {
+    const createLink = async() => {
         if (!selectedWorkspace) {
             toast.error("Choose a workspace first");
             workspaceRef.current?.focus();
@@ -97,19 +99,24 @@ export function CreateContentModalV2({
         }
 
         const type = selectedType || detectLinkType(link);
-
-        dispatch(
-            addLink({
+        try{
+        await dispatch(
+             addLink({
                 title: title || "Untitled",
                 url: link,
                 category: type.toUpperCase(),
                 workspace: selectedWorkspace
             })
-        )
-
+        ).unwrap();
         toast.success("Link Created Successfully");
         onSuccess?.();
         onClose();
+    }catch(error){
+        toast.error('Failed to create link. Try Again');
+        console.log(error);
+    }
+
+        
     }
 
     const processLink = (value: string) => {

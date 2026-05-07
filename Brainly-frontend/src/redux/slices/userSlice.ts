@@ -34,6 +34,7 @@ const userSlice = createSlice({
     reducers: {
         setUserDetails(state, action: PayloadAction<User>) {
             state.user = {
+                _id:action.payload._id,
                 name: action.payload.name,
                 email: action.payload.email,
                 password: action.payload.password,

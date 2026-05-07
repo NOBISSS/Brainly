@@ -10,10 +10,10 @@ export interface Link {
     category: string;
     thumbnail?: string;
     tags?: string[];
-    createdBy:{
-        _id:string;
-        name:string;
-        avatar:string;
+    createdBy: {
+        _id: string;
+        name: string;
+        avatar: string;
     }
     workspace?: string | null;
     createdAt?: string;
@@ -45,14 +45,14 @@ export const fetchLinksByWorkspace = createAsyncThunk("links/fetchLinks", async 
 
 export const addLink = createAsyncThunk("links/addLink", async (linkData: Partial<Link>, { rejectWithValue }) => {
     try {
-        
+
         const res = await axios.post(`${BACKEND_URL}api/links/create`, linkData, {
             withCredentials: true
         })
-        
+
         return res.data.data;
     } catch (error: any) {
-        console.log("IN CATCH BLOCK",error)
+        console.log("IN CATCH BLOCK", error)
         return rejectWithValue(error.response?.data?.message || "Failed to Add Link")
     }
 })
@@ -74,6 +74,26 @@ const linkSlice = createSlice({
     name: "links",
     initialState,
     reducers: {
+        linkAdded: (state, action: PayloadAction<Link>) => {
+            const link = action.payload;
+            const wsId = link.workspace;
+
+            if (wsId) {
+                if (!state.byWorkspace[wsId]) {
+                    state.byWorkspace[wsId] = [];
+                }
+                // avoid duplicates (socket may fire alongside HTTP response)
+                const alreadyExists = state.byWorkspace[wsId].some(l => l._id === link._id);
+                if (!alreadyExists) {
+                    state.byWorkspace[wsId].unshift(link);
+                }
+            } else {
+                const alreadyExists = state.personal.some(l => l._id === link._id);
+                if (!alreadyExists) {
+                    state.personal.unshift(link);
+                }
+            }
+        },
         setLinksForWorkspace: (state, action: PayloadAction<{ workspaceId: string; links: Link[] }>) => {
             const { workspaceId, links } = action.payload;
             state.byWorkspace[workspaceId] = links;
@@ -108,7 +128,7 @@ const linkSlice = createSlice({
                 state.loading = false;
                 const link = action.payload as Link;
                 const wsId = link.workspace;
-                
+
                 if (wsId) {
                     if (!state.byWorkspace[wsId]) {
                         state.byWorkspace[wsId] = [];
@@ -143,5 +163,5 @@ const linkSlice = createSlice({
             });
     },
 });
-export const { clearLinksError, setLinksForWorkspace } = linkSlice.actions;
+export const { clearLinksError, linkAdded, setLinksForWorkspace } = linkSlice.actions;
 export default linkSlice.reducer;
