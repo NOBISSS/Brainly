@@ -164,7 +164,7 @@ export const removeCollaborator = async (req: Request, res: Response) => {
 //new
 export const deleteWorkspace = async (req: Request, res: Response) => {
   try {
-    const workspace = req.workspace!;
+    const workspace:any = req.workspace!;
 
     const {io}=await import("../index");
     io.to(workspace._id.toString()).emit("workspace:deleted",workspace._id.toString())
