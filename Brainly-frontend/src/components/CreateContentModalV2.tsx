@@ -37,6 +37,7 @@ export function CreateContentModalV2({
 }: CreateContentModalProps) {
 
     const lastFetchedUrlRef = useRef<string | null>(null);
+    const [isSubmitting,setIsSubmitting]=useState(false);
     const [isAutoType, setIsAutoType] = useState(false);
     const [isFetchingOG, setIsFetchingOG] = useState(false);
     const [thumbnail, setThumbnail] = useState<string | null>(null);
@@ -48,6 +49,10 @@ export function CreateContentModalV2({
     const typeRef = useRef<HTMLSelectElement>(null);
     const workspaceRef = useRef<HTMLSelectElement>(null);
     const dispatch = useDispatch();
+
+    const userEditedTitle=useRef(false);
+    const userEditedThumbnail=useRef(false);
+
     const SelectedWorkspace = useSelector((state) => state.workspaces?.selected) || "";
     const fetchOGPreview = async (url: string) => {
         if (!url) return;
@@ -64,8 +69,8 @@ export function CreateContentModalV2({
         try {
             const res = await axios.get(BACKEND_URL + `api/links/preview?url=${url}`, { withCredentials: true });
             //console.log(res);
-            if (res.data.title && !title) setTitle(res.data.title);
-            if (res.data.thumbnail && !thumbnail) setThumbnail(res.data.thumbnail);
+            if (res.data.title && !userEditedTitle.current) setTitle(res.data.title);
+            if (res.data.thumbnail && !userEditedThumbnail.current) setThumbnail(res.data.thumbnail);
         } catch (error) {
             console.log(error);
             console.log("OG FETCH FAILED");
@@ -87,6 +92,20 @@ export function CreateContentModalV2({
         }
     };
 
+    const handleClose = () => {
+        setLink("");
+        setTitle("");
+        setThumbnail(null);
+        setSelectedType("");
+        setIsAutoType(false);
+        setIsSubmitting(false);
+        lastFetchedUrlRef.current = null;
+        userEditedTitle.current = false;
+        userEditedThumbnail.current = false;
+        onClose();
+    };
+
+
     const createLink = async() => {
         if (!selectedWorkspace) {
             toast.error("Choose a workspace first");
@@ -97,7 +116,8 @@ export function CreateContentModalV2({
             toast.error("Please Fill All Required Details")
             return;
         }
-
+        if(isSubmitting) return;
+        setIsSubmitting(true);
         const type = selectedType || detectLinkType(link);
         try{
         await dispatch(
@@ -110,12 +130,13 @@ export function CreateContentModalV2({
         ).unwrap();
         toast.success("Link Created Successfully");
         onSuccess?.();
-        onClose();
+        handleClose();
     }catch(error){
-        toast.error('Failed to create link. Try Again');
+        toast.error(error || 'Failed to create link. Try Again');
         console.log(error);
+    }finally{
+        setIsSubmitting(false);
     }
-
         
     }
 
@@ -123,7 +144,11 @@ export function CreateContentModalV2({
         setLink(value);
         handleLinkChange(value);
         setThumbnail(null);
+        setTitle("");
         setIsAutoType(false);
+        lastFetchedUrlRef.current=null;
+        userEditedTitle.current=false;
+        userEditedThumbnail.current=false;
     }
 
     useEffect(() => {
@@ -160,7 +185,7 @@ export function CreateContentModalV2({
             {/* Overlay */}
             <div
                 className="fixed inset-0 z-40 backdrop-blur-sm bg-black/30"
-                onClick={onClose}
+                onClick={handleClose}
             />
 
             {/* Modal */}
@@ -171,7 +196,7 @@ export function CreateContentModalV2({
                         <h1 className="text-xl sm:text-2xl font-bold text-purple-700">
                             Add Link
                         </h1>
-                        <button onClick={onClose} className="cursor-pointer">
+                        <button onClick={handleClose} className="cursor-pointer">
                             <CrossIcon />
                         </button>
                     </div>
@@ -228,7 +253,10 @@ export function CreateContentModalV2({
                             </SelectContent>
                         </Select>
                         <Input value={title} placeholder="Title (auto later)"
-                            onChange={(e) => setTitle(e.target.value)}
+                            onChange={(e) => {
+                                userEditedTitle.current=true;
+                                setTitle(e.target.value);
+                            }}
                         />
                     </div>
                     {/*PREVIEW*/}
@@ -279,10 +307,10 @@ export function CreateContentModalV2({
                         <Button
                             onClick={createLink}
                             variant="Primary"
-                            text={selectedWorkspace ? "Submit" : "Select Workspace First"}
+                            text={isSubmitting ? "Saving..." :selectedWorkspace ? "Submit" : "Select Workspace First"}
                             fullWidth={true}
-                            onKeyDown={(e) => e.key === "Enter" && createLink()}
-                            disabled={!selectedWorkspace}
+                            onKeyDown={(e) => e.key === "Enter" && !isSubmitting && createLink()}
+                            disabled={!selectedWorkspace || isSubmitting}
                         />
                     </div>
                 </div>

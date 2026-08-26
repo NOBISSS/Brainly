@@ -128,14 +128,16 @@ const linkSlice = createSlice({
                 state.loading = false;
                 const link = action.payload as Link;
                 const wsId = link.workspace;
-
+                console.log(link,wsId);
                 if (wsId) {
-                    if (!state.byWorkspace[wsId]) {
-                        state.byWorkspace[wsId] = [];
+                    if (!state.byWorkspace[wsId]) state.byWorkspace[wsId] = [];
+                    const alreadyExists=state.byWorkspace[wsId].some(l=>l._id===link._id);
+                    if(!alreadyExists){
+                        state.byWorkspace[wsId] = [link, ...state.byWorkspace[wsId]];
                     }
-                    state.byWorkspace[wsId] = [link, ...state.byWorkspace[wsId]];
                 } else {
-                    state.personal.unshift(link);
+                    const alreadyExists=state.personal.some(l=>l._id===link._id);
+                    if(!alreadyExists) state.personal.unshift(link);
                 }
             })
 
