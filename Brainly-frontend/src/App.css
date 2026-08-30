@@ -49,20 +49,21 @@
 
 @layer utilities {
   .glass {
-    background: hsl(var(--card) / 0.6);
+    background: color-mix(in oklch, var(--card) 60%, transparent);
     backdrop-filter: blur(16px);
-    border: 1px solid hsl(var(--border) / 0.5);
+    border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
   }
 
   .glass-strong {
-    background: hsl(var(--card) / 0.8);
+    background: color-mix(in oklch, var(--card) 80%, transparent);
     backdrop-filter: blur(28px);
-    border: 1px solid hsl(var(--border) / 0.6);
+    border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
   }
 
   .gradient-text {
     background: linear-gradient(to right, #7C3AED, #A855F7);
     -webkit-background-clip: text;
+    background-clip: text;
     color: transparent;
   }
 }

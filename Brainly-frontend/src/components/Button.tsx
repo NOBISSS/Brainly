@@ -1,26 +1,53 @@
 import type { ReactElement } from "react";
 
-interface ButtonProps{
-    variant:"Primary"|"Secondary";
-    text:string;
-    startIcon?:ReactElement;
-    onClick?:()=>void;
-    fullWidth?:boolean;
-    loading?:boolean;
+interface ButtonProps {
+    variant: "Primary" | "Secondary";
+    text: string;
+    startIcon?: ReactElement;
+    onClick?: () => void;
+    fullWidth?: boolean;
+    loading?: boolean;
+    disabled?: boolean;
+    type?: "button" | "submit" | "reset";
 }
 
-const variantClasses={
-    "Primary":"bg-purple-600 text-white ",
-    "Secondary":"bg-purple-200 text-purple-600"
-}
+const variantClasses = {
+    Primary: "bg-gradient-to-t from-fuchsia-500 to-purple-700 text-white hover:from-fuchsia-600 hover:to-purple-800",
+    Secondary: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+};
 
-const defaultStyles="px-4 py-2 rounded-md flex items-center justify-center gap-2 font-md";
+export function Button({
+    variant,
+    text,
+    startIcon,
+    onClick,
+    fullWidth = false,
+    loading = false,
+    disabled = false,
+    type = "button",
+}: ButtonProps) {
+    const isDisabled = loading || disabled;
 
-export function Button({variant,text,startIcon,onClick,fullWidth,loading}:ButtonProps){
-    return <button onClick={onClick} className={variantClasses[variant] + " bg-gradient-to-t from-fuchsia-500 to-purple-900 relative group "+ " "+defaultStyles + `${fullWidth ? " w-full" : ""} ${loading ? " opacity-45" : " cursor-pointer"}`} disabled={loading}>
-        {startIcon}
-        {text}
-        <span className="absolute inset-x-0 bottom-px bg-gradient-to-r from-transparent via-black to-transparent h-px w-4/5 mx-auto"></span>
-        <span className="absolute opacity-0 inset-x-0 group-hover:opacity-100 transition-opacity duration-300 bottom-px bg-gradient-to-r from-transparent via-black to-transparent h-[3px] w-4/5 mx-auto blur-sm"></span>
-    </button>
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={isDisabled}
+            className={`group relative inline-flex min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-xl px-3 py-2 text-xs font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-purple-400/50 disabled:pointer-events-none disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm ${variantClasses[variant]} ${fullWidth ? "w-full" : ""}`}
+        >
+            {loading ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            ) : (
+                startIcon && <span className="shrink-0">{startIcon}</span>
+            )}
+
+            <span className="truncate">
+                {loading ? "Loading..." : text}
+            </span>
+
+            <span className="absolute bottom-0 left-1/2 h-px w-4/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-black/40 to-transparent" />
+
+            <span className="absolute bottom-0 left-1/2 h-[3px] w-4/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-black/40 to-transparent opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-100" />
+        </button>
+    );
 }

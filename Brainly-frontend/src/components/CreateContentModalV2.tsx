@@ -1,30 +1,20 @@
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CrossIcon } from "../icons/CrossIcon";
 import { Button } from "./Button";
 import { Input } from "./Input";
-import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
 import { detectLinkType } from "../utils/detectLinkType";
-import { useDispatch, useSelector } from "react-redux";
 import { addLink } from "../redux/slices/linkSlice";
-import { fetchWorkspaces as FetchWorkspacesThunk } from "../redux/slices/workspaceSlice";
+import { fetchWorkspaces } from "../redux/slices/workspaceSlice";
+import type { AppDispatch, RootState } from "../redux/store";
+import { LINK_TYPES as types } from "@/constants/frConstant";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
-import { motion } from "framer-motion";
 
-//shadcn
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { LINK_TYPES as types } from "@/constants/frConstant";
-import {socket} from "../socket/socket";
-
-interface CreateContentModalProps {
+interface Props {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
@@ -34,287 +24,417 @@ export function CreateContentModalV2({
     open,
     onClose,
     onSuccess,
-}: CreateContentModalProps) {
+}: Props) {
+    const dispatch = useDispatch<AppDispatch>();
+    const nameRef = useRef<HTMLInputElement>(null);
+    const workspaceRef = useRef<HTMLButtonElement>(null);
+    const lastFetchedUrl = useRef<string | null>(null);
+    const userEditedTitle = useRef(false);
 
-    const lastFetchedUrlRef = useRef<string | null>(null);
-    const [isSubmitting,setIsSubmitting]=useState(false);
-    const [isAutoType, setIsAutoType] = useState(false);
-    const [isFetchingOG, setIsFetchingOG] = useState(false);
-    const [thumbnail, setThumbnail] = useState<string | null>(null);
-    const [workspace, setWorkspaces] = useState<any[]>([]);
-    const [selectedWorkspace, setSelectedWorkspace] = useState("");
-    const [selectedType, setSelectedType] = useState("");
+    const selectedWorkspace = useSelector(
+        (state: RootState) => state.workspaces.selected
+    );
+
+    const [workspaces, setWorkspaces] = useState<any[]>([]);
+    const [workspace, setWorkspace] = useState("");
+    const [type, setType] = useState("");
     const [title, setTitle] = useState("");
-    const [link, setLink] = useState("");
-    const typeRef = useRef<HTMLSelectElement>(null);
-    const workspaceRef = useRef<HTMLSelectElement>(null);
-    const dispatch = useDispatch();
+    const [url, setUrl] = useState("");
+    const [thumbnail, setThumbnail] = useState("");
+    const [thumbnailError, setThumbnailError] = useState(false);
+    const [fetchingPreview, setFetchingPreview] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [autoType, setAutoType] = useState(false);
 
-    const userEditedTitle=useRef(false);
-    const userEditedThumbnail=useRef(false);
+    const isValidUrl = (value: string) => {
+        try {
+            const parsed = new URL(value);
+            return parsed.protocol === "http:" || parsed.protocol === "https:";
+        } catch {
+            return false;
+        }
+    };
 
-    const SelectedWorkspace = useSelector((state) => state.workspaces?.selected) || "";
-    const fetchOGPreview = async (url: string) => {
-        if (!url) return;
+    useEffect(() => {
+        if (open && selectedWorkspace?._id) {
+            setWorkspace(selectedWorkspace._id);
+        }
+    }, [open, selectedWorkspace]);
 
-        //prevent duplicate calling
-        if (lastFetchedUrlRef.current === url) {
-            console.log("OG Already Fetched for this URL");
+    useEffect(() => {
+        if (!open) return;
+
+        dispatch(fetchWorkspaces())
+            .unwrap()
+            .then((data) => setWorkspaces(data || []))
+            .catch(() => toast.error("Failed to load workspaces"));
+    }, [open, dispatch]);
+
+    useEffect(() => {
+        if (!open) return;
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && !submitting) {
+                handleClose();
+            }
+        };
+
+        document.addEventListener("keydown", handleEscape);
+        return () => document.removeEventListener("keydown", handleEscape);
+    }, [open, submitting]);
+
+    useEffect(() => {
+        if (!open) return;
+
+        const timer = setTimeout(() => {
+            nameRef.current?.focus();
+        }, 150);
+
+        return () => clearTimeout(timer);
+    }, [open]);
+
+    useEffect(() => {
+        if (!url || !isValidUrl(url)) return;
+
+        const timer = setTimeout(async () => {
+            if (lastFetchedUrl.current === url) return;
+
+            lastFetchedUrl.current = url;
+            setFetchingPreview(true);
+            setThumbnailError(false);
+
+            try {
+                const response = await axios.get(
+                    `${BACKEND_URL}api/links/preview?url=${encodeURIComponent(url)}`,
+                    { withCredentials: true }
+                );
+
+                if (response.data?.title && !userEditedTitle.current) {
+                    setTitle(response.data.title);
+                }
+
+                if (response.data?.thumbnail) {
+                    setThumbnail(response.data.thumbnail);
+                }
+            } catch {
+                lastFetchedUrl.current = null;
+            } finally {
+                setFetchingPreview(false);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [url]);
+
+    const handleUrlChange = (value: string) => {
+        setUrl(value);
+        setTitle("");
+        setThumbnail("");
+        setThumbnailError(false);
+        setAutoType(false);
+        lastFetchedUrl.current = null;
+        userEditedTitle.current = false;
+
+        const detected = detectLinkType(value);
+
+        if (detected && detected !== "unknown") {
+            setType(detected);
+            setAutoType(true);
+        } else {
+            setType("");
+        }
+    };
+
+    const handleCreate = async () => {
+        if (!workspace) {
+            toast.error("Please select a workspace");
+            workspaceRef.current?.focus();
             return;
         }
 
-        lastFetchedUrlRef.current = url;
-        setIsFetchingOG(true);
+        if (!url.trim()) {
+            toast.error("Please enter a link");
+            return;
+        }
+
+        if (!isValidUrl(url)) {
+            toast.error("Please enter a valid URL");
+            return;
+        }
+
+        if (submitting) return;
 
         try {
-            const res = await axios.get(BACKEND_URL + `api/links/preview?url=${url}`, { withCredentials: true });
-            //console.log(res);
-            if (res.data.title && !userEditedTitle.current) setTitle(res.data.title);
-            if (res.data.thumbnail && !userEditedThumbnail.current) setThumbnail(res.data.thumbnail);
-        } catch (error) {
-            console.log(error);
-            console.log("OG FETCH FAILED");
-            lastFetchedUrlRef.current = null;
+            setSubmitting(true);
+
+            const detected = detectLinkType(url);
+            const contentType = type || detected || "unknown";
+
+            await dispatch(
+                addLink({
+                    title: title.trim() || "Untitled",
+                    url: url.trim(),
+                    category: contentType.toUpperCase(),
+                    workspace,
+                })
+            ).unwrap();
+
+            toast.success("Link created successfully");
+            onSuccess();
+            handleClose();
+        } catch (error: any) {
+            toast.error(
+                error?.message || "Failed to create link"
+            );
         } finally {
-            setIsFetchingOG(false);
-        }
-    }
-
-    const handleLinkChange = (
-        value: string
-    ) => {
-        if (!value) return;
-
-        const detectedType = detectLinkType(value);
-        if (detectedType && detectedType !== "unknown") {
-            setSelectedType(detectedType);
-            setIsAutoType(true);
+            setSubmitting(false);
         }
     };
 
     const handleClose = () => {
-        setLink("");
+        if (submitting) return;
+
+        setUrl("");
         setTitle("");
-        setThumbnail(null);
-        setSelectedType("");
-        setIsAutoType(false);
-        setIsSubmitting(false);
-        lastFetchedUrlRef.current = null;
+        setThumbnail("");
+        setThumbnailError(false);
+        setWorkspace(selectedWorkspace?._id || "");
+        setType("");
+        setAutoType(false);
+        setFetchingPreview(false);
+        setSubmitting(false);
+        lastFetchedUrl.current = null;
         userEditedTitle.current = false;
-        userEditedThumbnail.current = false;
+
         onClose();
     };
 
-
-    const createLink = async() => {
-        if (!selectedWorkspace) {
-            toast.error("Choose a workspace first");
-            workspaceRef.current?.focus();
-            return;
-        }
-        if (!link || !selectedWorkspace) {
-            toast.error("Please Fill All Required Details")
-            return;
-        }
-        if(isSubmitting) return;
-        setIsSubmitting(true);
-        const type = selectedType || detectLinkType(link);
-        try{
-        await dispatch(
-             addLink({
-                title: title || "Untitled",
-                url: link,
-                category: type.toUpperCase(),
-                workspace: selectedWorkspace
-            })
-        ).unwrap();
-        toast.success("Link Created Successfully");
-        onSuccess?.();
-        handleClose();
-    }catch(error){
-        toast.error(error || 'Failed to create link. Try Again');
-        console.log(error);
-    }finally{
-        setIsSubmitting(false);
-    }
-        
-    }
-
-    const processLink = (value: string) => {
-        setLink(value);
-        handleLinkChange(value);
-        setThumbnail(null);
-        setTitle("");
-        setIsAutoType(false);
-        lastFetchedUrlRef.current=null;
-        userEditedTitle.current=false;
-        userEditedThumbnail.current=false;
-    }
-
-    useEffect(() => {
-        if (!link) return;
-        const id = setTimeout(() => fetchOGPreview(link), 400);
-        return () => clearTimeout(id);
-    }, [link])
-
-    useEffect(() => {
-        if (open && SelectedWorkspace?._id) {
-            setSelectedWorkspace(SelectedWorkspace._id);
-        }
-    }, [open, SelectedWorkspace]);
-
-
-    useEffect(() => {
-        if (!open) return;
-        const fetchWorkspaces = async () => {
-            try {
-                const workspacesData = await dispatch(FetchWorkspacesThunk()).unwrap();
-                setWorkspaces(workspacesData);
-            } catch (error) {
-                console.log("Failed to Fetch Workspaces", error);
-            }
-        };
-        fetchWorkspaces();
-        //setWorkspaces(workspacesData || []);
-    }, [open, dispatch]);
-
     if (!open) return null;
 
-    return (
-        <>
-            {/* Overlay */}
-            <div
-                className="fixed inset-0 z-40 backdrop-blur-sm bg-black/30"
-                onClick={handleClose}
-            />
+    const canSubmit =
+        Boolean(workspace && url.trim() && isValidUrl(url)) &&
+        !submitting;
 
-            {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                <div className="w-full max-w-md bg-white p-5 sm:p-6 rounded-2xl shadow-lg relative">
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-xl sm:text-2xl font-bold text-purple-700">
-                            Add Link
-                        </h1>
-                        <button onClick={handleClose} className="cursor-pointer">
+    return (
+        <AnimatePresence>
+            <motion.div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleClose}
+            >
+                <motion.div
+                    initial={{ opacity: 0, y: 15, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 15, scale: 0.97 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex max-h-[94vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                >
+                    <div className="flex shrink-0 items-start justify-between border-b border-gray-100 p-4 sm:p-5">
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+                                Add Link
+                            </h2>
+                            <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+                                Save content to your workspace
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            disabled={submitting}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                        >
                             <CrossIcon />
                         </button>
                     </div>
 
-                    {/* Inputs */}
-                    <div className="space-y-3 flex flex-col">
-                        <Input value={link} placeholder="Paste Link here"
-                            onChange={(e) => processLink(e.target.value)}
-                        />
-                        {/* Type Selection */}
-                        <Select
-                            value={selectedType}
-                            onValueChange={(e) => {
-                                setSelectedType(e);
-                                setIsAutoType(false);
-                            }}
-                        >
-                            <SelectTrigger
-                                ref={typeRef as any}
-                                className="px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base capitalize outline-none focus:ring-2  focus:ring-purple-600 transition-all duration-300">
-                                <SelectValue placeholder="Select Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup className="lowercase ">
-                                    <SelectLabel>Types</SelectLabel>
-                                    {types.map((type, index) => (
-                                        <SelectItem key={index} value={type} className="capitalize">
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        {isAutoType && (
-                            <p className="text-xs text-gray-400">
-                                Type Detected Automatially - You can change it
-                            </p>
-                        )}
-                        {/* Workspace Selection */}
-                        <Select
-                            value={selectedWorkspace}
-                            onValueChange={(val) => setSelectedWorkspace(val)}
-                        >
-                            <SelectTrigger ref={workspaceRef} className={`px-4 py-2 w-full m-2 border rounded-md bg-blue-100 text-sm sm:text-base outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300 ${!selectedWorkspace ? "border-red-400" : "border-gray-200"}`}>
-                                <SelectValue placeholder="Select a Workspace" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectLabel>Workspace</SelectLabel>
-                                    {workspace.map((ws: any) => (
-                                        <SelectItem key={ws._id} value={ws._id}>{ws.name}</SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <Input value={title} placeholder="Title (auto later)"
-                            onChange={(e) => {
-                                userEditedTitle.current=true;
-                                setTitle(e.target.value);
-                            }}
-                        />
-                    </div>
-                    {/*PREVIEW*/}
-                    {isFetchingOG && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="flex items-center gap-2 text-sm text-gray-500 mt-2"
-                        >
-                            {/* Spinner */}
-                            <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                            <span>Fetching preview...</span>
-                        </motion.div>
-                    )
-                    }
+                    <div className="overflow-y-auto p-4 sm:p-5">
+                        <div className="space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Link
+                                </label>
 
-                    {thumbnail && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            //transition={{ duration: 0.25 }}
-                            style={thumbnail ? { backgroundImage: `url(${thumbnail || "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=500"})` } : undefined}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className={`bg-white p-5 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out cursor-default bg-cover bg-center relative`}
-                        >
-                            <div className="absolute inset-0 bg-black/70 rounded-3xl"></div>
-                            <div className="flex justify-between">
-                                <h2 className="relative font-medium text-lg text-white mb-2">
-                                    {title}
-                                </h2>
+                                <Input
+                                    value={url}
+                                    placeholder="https://example.com"
+                                    onChange={(e) =>
+                                        handleUrlChange(e.target.value)
+                                    }
+                                />
+
+                                {url && !isValidUrl(url) && (
+                                    <p className="text-xs text-red-500">
+                                        Enter a valid HTTP or HTTPS URL.
+                                    </p>
+                                )}
                             </div>
-                            <p className="relative text-sm text-gray-200 truncate mt-1">{link}</p>
-                            <div className="mt-4">
-                                <a
-                                    href={link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-purple-200 relative font-medium hover:text-white cursor-pointer"
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Content type
+                                </label>
+
+                                <Select
+                                    value={type}
+                                    onValueChange={(value) => {
+                                        setType(value);
+                                        setAutoType(false);
+                                    }}
                                 >
-                                    Open Link →
-                                </a>
+                                    <SelectTrigger className="w-full bg-gray-50">
+                                        <SelectValue placeholder="Select content type" />
+                                    </SelectTrigger>
+
+                                    <SelectContent
+                                        position="popper"
+                                        side="bottom"
+                                        align="start"
+                                        sideOffset={5}
+                                        className="z-[200] max-h-60 w-[var(--radix-select-trigger-width)] overflow-y-auto bg-white"
+                                    >
+                                        <SelectGroup>
+                                            <SelectLabel className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">
+                                                Types
+                                            </SelectLabel>
+
+                                            {types.map((item, index) => (
+                                                <SelectItem
+                                                    key={`${item}-${index}`}
+                                                    value={item}
+                                                    className="cursor-pointer capitalize"
+                                                >
+                                                    {item}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+
+                                {autoType && (
+                                    <p className="text-xs text-purple-600">
+                                        ✨ Type detected automatically
+                                    </p>
+                                )}
                             </div>
-                        </motion.div>
-                    )}
-                    {/* Submit Button */}
-                    <div className="flex justify-center mt-5">
-                        <Button
-                            onClick={createLink}
-                            variant="Primary"
-                            text={isSubmitting ? "Saving..." :selectedWorkspace ? "Submit" : "Select Workspace First"}
-                            fullWidth={true}
-                            onKeyDown={(e) => e.key === "Enter" && !isSubmitting && createLink()}
-                            disabled={!selectedWorkspace || isSubmitting}
-                        />
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Workspace
+                                </label>
+
+                                <Select
+                                    value={workspace}
+                                    onValueChange={setWorkspace}
+                                >
+                                    <SelectTrigger
+                                        ref={workspaceRef}
+                                        className={`w-full ${
+                                            workspace
+                                                ? "bg-gray-50"
+                                                : "border-red-300 bg-red-50"
+                                        }`}
+                                    >
+                                        <SelectValue placeholder="Select a workspace" />
+                                    </SelectTrigger>
+
+                                    <SelectContent
+                                        position="popper"
+                                        side="bottom"
+                                        align="start"
+                                        sideOffset={5}
+                                        className="z-[200] max-h-60 w-[var(--radix-select-trigger-width)] overflow-y-auto bg-white"
+                                    >
+                                        <SelectGroup>
+                                            <SelectLabel className="px-3 py-2 text-xs uppercase tracking-wide text-gray-400">
+                                                Workspaces
+                                            </SelectLabel>
+
+                                            {workspaces.length === 0 ? (
+                                                <div className="px-3 py-4 text-center text-sm text-gray-400">
+                                                    No workspaces found
+                                                </div>
+                                            ) : (
+                                                workspaces.map((item) => (
+                                                    <SelectItem
+                                                        key={item._id}
+                                                        value={item._id}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        {item.name}
+                                                    </SelectItem>
+                                                ))
+                                            )}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Title
+                                </label>
+
+                                <Input
+                                    value={title}
+                                    placeholder="Title will be generated automatically"
+                                    onChange={(e) => {
+                                        userEditedTitle.current = true;
+                                        setTitle(e.target.value);
+                                    }}
+                                />
+                            </div>
+
+                            {fetchingPreview && (
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                                    Fetching preview...
+                                </div>
+                            )}
+
+                            {thumbnail && !thumbnailError && (
+                                <div className="relative h-44 overflow-hidden rounded-2xl bg-gray-900 sm:h-52">
+                                    <img
+                                        src={thumbnail}
+                                        alt=""
+                                        onError={() =>
+                                            setThumbnailError(true)
+                                        }
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+                                    <div className="relative flex h-full flex-col justify-end p-4">
+                                        <h3 className="line-clamp-2 text-lg font-semibold text-white">
+                                            {title || "Untitled"}
+                                        </h3>
+
+                                        <p className="mt-1 truncate text-xs text-white/70">
+                                            {url}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleCreate}
+                                variant="Primary"
+                                text={
+                                    submitting
+                                        ? "Saving..."
+                                        : "Save Link"
+                                }
+                                fullWidth
+                                disabled={!canSubmit}
+                            />
+                        </div>
                     </div>
-                </div>
-            </div>
-        </>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 }

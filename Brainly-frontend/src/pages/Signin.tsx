@@ -45,9 +45,9 @@ export function Signin() {
                 <div className="flex justify-center items-center self-center pt-4">
                     <Button onClick={signin} loading={false} variant="Primary" text="Signin" fullWidth={true} />
                 </div>
-                <div>
+                {/* <div>
                     <button className="px-3 mt-5 py-2 bg-black text-white" onClick={loginWithGoogle}>Login With Google</button>
-                </div>
+                </div> */}
                 <div className="mt-5 flex flex-col justify-center ">
                     <h1><span className="text-purple-700 underline cursor-pointer" onClick={() => navigate("/forgotpassword")}>Forgot Password ?</span></h1>
                     <h1 className="text-gray-700">New User ?{" "} <span className="text-purple-700 underline cursor-pointer" onClick={() => navigate("/signup")}>Register</span></h1>

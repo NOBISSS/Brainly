@@ -1,309 +1,527 @@
-// src/components/Sidebar.tsx
 import { useEffect, useState } from "react";
-import { SidebarItem } from "./SidebarItem";
-import Brain from "../assets/brain.svg";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "../redux/store";
-import {
-  socketWorkspaceCreated,
-  socketMemberAdded,
-  socketMemberRemoved,
-  socketWorkspaceDeleted
-} from "../redux/slices/workspaceSlice";
-import {socket} from "../socket/socket";
+import { AnimatePresence, motion } from "framer-motion";
+import { MoreVertical, X } from "lucide-react";
 import { HiArrowTurnRightDown } from "react-icons/hi2";
-import {
-  fetchWorkspaces,
-  setSelectedWorkspaces,
-  deleteWorkspace,
-  addCollaborator,
-  removeCollaborator,
-  fetchWorkspaceById,
-  Workspace,
-} from "../redux/slices/workspaceSlice";
-import { MoreVertical } from "lucide-react";
+import toast from "react-hot-toast";
+
+import Brain from "../assets/brain.svg";
+import { SidebarItem } from "./SidebarItem";
 import { WorkspaceMenuModal } from "./WorkspaceMenuModal";
 import { AddCollaboratorModal } from "./AddCollaboratorModal";
-import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 import { ManageCollaboratorsModal } from "./ManageCollaboratorsModal";
+
+import type { AppDispatch, RootState } from "../redux/store";
+import {
+    addCollaborator,
+    deleteWorkspace,
+    fetchWorkspaceById,
+    fetchWorkspaces,
+    removeCollaborator,
+    setSelectedWorkspaces,
+    socketMemberAdded,
+    socketMemberRemoved,
+    socketWorkspaceCreated,
+    socketWorkspaceDeleted,
+    type Workspace,
+} from "../redux/slices/workspaceSlice";
+
 import { fetchCurrentUser } from "../redux/slices/userThunks";
-import BrainlyLogo from "../assets/Brainly_Logo.png"
+import { socket } from "../socket/socket";
+
 interface SidebarProps {
-  mobileOpen: boolean;
-  onClose: () => void;
+    mobileOpen: boolean;
+    onClose: () => void;
 }
 
-export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
-  const dispatch = useDispatch<AppDispatch>();
-  const user=useSelector((store)=>store.user.user);
-  const name=user?.name || "User";
-  const { list, loading } = useSelector(
-    (state: RootState) => state.workspaces
-  );
+export function Sidebar({
+    mobileOpen,
+    onClose,
+}: SidebarProps) {
+    const dispatch = useDispatch<AppDispatch>();
 
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-
-
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [addCollaboratorOpen, setAddCollaboratorOpen] = useState(false);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
-    null
-  );
-  const [removeCollaborators, setRemoveCollaborators] = useState(false);
-
-  // useEffect(() => {
-  //   dispatch(fetchWorkspaces());
-  //   dispatch(fetchCurrentUser());
-  // }, [dispatch]);
-  useEffect(()=>{
-socket.on("connect", () => {
-  console.log("🟢 socket connected", socket.id);
-});
-  },[]) 
-
-  useEffect(()=>{
-    dispatch(fetchWorkspaces());
-    dispatch(fetchCurrentUser());
-
-    socket.on("connect", () => {
-  console.log("🟢 socket connected", socket.id);
-});
-
-
-    socket.on("workspaceCreated",(workspace:Workspace)=>{
-      dispatch(socketWorkspaceCreated(workspace));
-    });
-
-    socket.on("workspaceDeleted",(id:string)=>{
-      dispatch(socketWorkspaceDeleted(id));
-    });
-    return ()=>{
-      socket.off("workspaceCreated");
-      socket.off("workspaceDeleted");
-      socket.off("memberAdded");
-      socket.off("memberRemoved");
-    }
-  },[dispatch])
-
-  const handleWorkspaceClick = (workspace: Workspace) => {
-    const workspaceId = workspace._id;
-    const exist = list.some((w) => w._id === workspaceId);
-    if (!exist) {
-      dispatch(fetchWorkspaceById(workspaceId));
-    }
-    dispatch(setSelectedWorkspaces(workspaceId));
-    onClose(); // close drawer on mobile
-  };
-
-  const handleAddCollaborator = (workspace: Workspace) => {
-    setSelectedWorkspace(workspace);
-    setAddCollaboratorOpen(true);
-  };
-
-  const handleCollaboratorSubmit = async (email: string) => {
-    try {
-      if (!selectedWorkspace?._id) return;
-      await dispatch(
-        addCollaborator({ workspaceId: selectedWorkspace._id, email })
-      ).unwrap();
-      toast.success(`Invite sent to ${email} for ${selectedWorkspace.name}`);
-    } catch (error: any) {
-      console.log(error);
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message || error || 
-        "Something went wrong"
-      );
-    } finally {
-      setAddCollaboratorOpen(false);
-    }
-  };
-
-  const handleRemoveCollaborator = async (memberId: string) => {
-    if (!selectedWorkspace?._id) return;
-    try {
-      await dispatch(
-        removeCollaborator({
-          workspaceId: selectedWorkspace._id,
-          memberId: memberId,
-        })
-      ).unwrap();
-      toast.success("Collaborator removed successfully");
-    } catch (error: any) {
-      console.log(error);
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message || error ||
-        "Something went wrong"
-      );
-    }
-  };
-
-  const handleDeleteWorkspace = async (
-    workspaceId: string,
-    workspaceName: string
-  ) => {
-    const confirmDelete = confirm(
-      `Are you sure you want to delete "${workspaceName}"?`
+    const user = useSelector(
+        (state: RootState) => state.user.user
     );
-    if (!confirmDelete) return;
 
-    try {
-      await dispatch(deleteWorkspace(workspaceId)).unwrap();
-      toast.success(`"${workspaceName}" deleted successfully`);
-    } catch (err) {
-      console.log("ERROR WHILE DELETE::",err);
-      toast.error(err || "Failed to Delete Workspace");
-    }
-  };
+    const {
+        list,
+        loading,
+        selected,
+    } = useSelector(
+        (state: RootState) => state.workspaces
+    );
 
-  const sidebarBody = (
-    <div className="h-full flex flex-col justify-between  w-full">
-      <div className="part-1 ">
-        {/* Logo Header */}
-        <div className="flex items-center gap-2 mt-3 pl-2">
-          <img className="w-10 h-10" src={Brain} alt="Brainly Logo" />
-          <h1 className="text-purple-600 text-3xl font-extrabold tracking-tight">
-        Brainly
-          </h1>
-        </div>
+    const [menuOpenId, setMenuOpenId] =
+        useState<string | null>(null);
 
-        {/* Navigation Links */}
-        <div className="pt-6 ml-2 space-y-1">
-          <SidebarItem text="Workspaces" icon={<HiArrowTurnRightDown />} />
-        </div>
+    const [activeWorkspace, setActiveWorkspace] =
+        useState<Workspace | null>(null);
 
-        {/* Workspace List */}
-        <div className="mt-4 space-y-2 relative max-h-[60vh] overflow-y-auto scrollbar-thin scroll-smooth
- pr-1 hover:scrollbar-thumb-purple-400">
-          {loading && (
-            <p className="text-gray-400 text-sm">Loading workspaces...</p>
-          )}
+    const [addCollaboratorOpen, setAddCollaboratorOpen] =
+        useState(false);
 
-          <AnimatePresence>
-            {list?.map((ws) => (
-              <motion.div
-                key={ws._id}
-                layout
-                onClick={() => handleWorkspaceClick(ws)}
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                exit={{ opacity: 0 }}
-                className="relative flex items-center justify-between group hover:bg-purple-50 rounded-lg p-2 active:bg-[#e3f2fd] font-bold border-l-8 border-purple-600 bg-gradient-to-l from-purple-100 to-white"
-              >
+    const [manageCollaboratorsOpen, setManageCollaboratorsOpen] =
+        useState(false);
+
+    useEffect(() => {
+        dispatch(fetchWorkspaces());
+        dispatch(fetchCurrentUser());
+    }, [dispatch]);
+
+    useEffect(() => {
+        const handleWorkspaceCreated = (
+            workspace: Workspace
+        ) => {
+            dispatch(
+                socketWorkspaceCreated(workspace)
+            );
+        };
+
+        const handleWorkspaceDeleted = (
+            workspaceId: string
+        ) => {
+            dispatch(
+                socketWorkspaceDeleted(workspaceId)
+            );
+        };
+
+        const handleMemberAdded = (
+            member: any
+        ) => {
+            dispatch(
+                socketMemberAdded(member)
+            );
+        };
+
+        const handleMemberRemoved = (
+            userId: string
+        ) => {
+            dispatch(
+                socketMemberRemoved(userId)
+            );
+        };
+
+        socket.on(
+            "workspaceCreated",
+            handleWorkspaceCreated
+        );
+
+        socket.on(
+            "workspaceDeleted",
+            handleWorkspaceDeleted
+        );
+
+        socket.on(
+            "memberAdded",
+            handleMemberAdded
+        );
+
+        socket.on(
+            "memberRemoved",
+            handleMemberRemoved
+        );
+
+        return () => {
+            socket.off(
+                "workspaceCreated",
+                handleWorkspaceCreated
+            );
+
+            socket.off(
+                "workspaceDeleted",
+                handleWorkspaceDeleted
+            );
+
+            socket.off(
+                "memberAdded",
+                handleMemberAdded
+            );
+
+            socket.off(
+                "memberRemoved",
+                handleMemberRemoved
+            );
+        };
+    }, [dispatch]);
+
+    const handleWorkspaceClick = (
+        workspace: Workspace
+    ) => {
+        dispatch(
+            setSelectedWorkspaces(
+                workspace._id
+            )
+        );
+
+        setMenuOpenId(null);
+        onClose();
+    };
+
+    const handleAddCollaborator = (
+        workspace: Workspace
+    ) => {
+        setActiveWorkspace(workspace);
+        setAddCollaboratorOpen(true);
+        setMenuOpenId(null);
+    };
+
+    const handleManageCollaborators = (
+        workspace: Workspace
+    ) => {
+        setActiveWorkspace(workspace);
+        setManageCollaboratorsOpen(true);
+        setMenuOpenId(null);
+    };
+
+    const handleCollaboratorSubmit = async (
+        email: string
+    ) => {
+        if (!activeWorkspace?._id) return;
+
+        try {
+            await dispatch(
+                addCollaborator({
+                    workspaceId:
+                        activeWorkspace._id,
+                    email,
+                })
+            ).unwrap();
+
+            toast.success(
+                `Invite sent to ${email}`
+            );
+
+            setAddCollaboratorOpen(false);
+        } catch (error: any) {
+            toast.error(
+                error?.message ||
+                    "Failed to add collaborator"
+            );
+        }
+    };
+
+    const handleRemoveCollaborator = async (
+        memberId: string
+    ) => {
+        if (!activeWorkspace?._id) return;
+
+        try {
+            await dispatch(
+                removeCollaborator({
+                    workspaceId:
+                        activeWorkspace._id,
+                    memberId,
+                })
+            ).unwrap();
+
+            toast.success(
+                "Collaborator removed successfully"
+            );
+        } catch (error: any) {
+            toast.error(
+                error?.message ||
+                    "Failed to remove collaborator"
+            );
+        }
+    };
+
+    const handleDeleteWorkspace = async (
+        workspaceId: string,
+        workspaceName: string
+    ) => {
+        const confirmed = window.confirm(
+            `Delete "${workspaceName}"?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await dispatch(
+                deleteWorkspace(workspaceId)
+            ).unwrap();
+
+            toast.success(
+                "Workspace deleted successfully"
+            );
+
+            setMenuOpenId(null);
+        } catch (error: any) {
+            toast.error(
+                error?.message ||
+                    "Failed to delete workspace"
+            );
+        }
+    };
+
+    const renderWorkspaces = () => {
+        if (loading && !list?.length) {
+            return (
+                <div className="space-y-2">
+                    {Array.from({
+                        length: 5,
+                    }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="h-10 animate-pulse rounded-xl bg-gray-200"
+                        />
+                    ))}
+                </div>
+            );
+        }
+
+        if (!list?.length) {
+            return (
+                <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-500">
+                    No workspaces yet.
+                </div>
+            );
+        }
+
+        return (
+            <AnimatePresence initial={false}>
+                {list.map((workspace) => {
+                    const isSelected =
+                        selected?._id ===
+                        workspace._id;
+
+                    return (
+                        <motion.div
+                            key={workspace._id}
+                            layout
+                            initial={{
+                                opacity: 0,
+                                y: -4,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            exit={{
+                                opacity: 0,
+                                height: 0,
+                            }}
+                            className={`group relative mb-1 flex min-w-0 items-center rounded-xl border-l-4 transition ${
+                                isSelected
+                                    ? "border-purple-600 bg-purple-100"
+                                    : "border-transparent hover:bg-purple-50"
+                            }`}
+                        >
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleWorkspaceClick(
+                                        workspace
+                                    )
+                                }
+                                className={`min-w-0 flex-1 truncate px-3 py-2.5 text-left text-sm font-medium transition ${
+                                    isSelected
+                                        ? "text-purple-700"
+                                        : "text-gray-700 hover:text-purple-700"
+                                }`}
+                            >
+                                {workspace.name}
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label={`Open options for ${workspace.name}`}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+
+                                    setActiveWorkspace(
+                                        workspace
+                                    );
+
+                                    setMenuOpenId(
+                                        (current) =>
+                                            current ===
+                                            workspace._id
+                                                ? null
+                                                : workspace._id
+                                    );
+                                }}
+                                className="mr-1 shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-white hover:text-purple-600 md:opacity-0 md:group-hover:opacity-100"
+                            >
+                                <MoreVertical size={18} />
+                            </button>
+
+                            {menuOpenId ===
+                                workspace._id && (
+                                <WorkspaceMenuModal
+                                    open
+                                    onClose={() =>
+                                        setMenuOpenId(
+                                            null
+                                        )
+                                    }
+                                    workspaceName={
+                                        workspace.name
+                                    }
+                                    onAddCollaborator={() =>
+                                        handleAddCollaborator(
+                                            workspace
+                                        )
+                                    }
+                                    onRemoveCollaborator={() =>
+                                        handleManageCollaborators(
+                                            workspace
+                                        )
+                                    }
+                                    onDelete={() =>
+                                        handleDeleteWorkspace(
+                                            workspace._id,
+                                            workspace.name
+                                        )
+                                    }
+                                />
+                            )}
+                        </motion.div>
+                    );
+                })}
+            </AnimatePresence>
+        );
+    };
+
+    const sidebarContent = (
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="flex items-center justify-between px-2 sm:px-3">
+                <div className="flex items-center gap-2">
+                    <img
+                        src={Brain}
+                        alt="Brainly"
+                        className="h-9 w-9 sm:h-10 sm:w-10"
+                    />
+
+                    <h1 className="text-2xl font-extrabold tracking-tight text-purple-600 sm:text-3xl">
+                        Brainly
+                    </h1>
+                </div>
+
                 <button
-                  className="text-purple-700 font-medium truncate text-sm flex-1 text-left cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    dispatch(setSelectedWorkspaces(ws._id));
-                    onClose();
-                  }}
+                    type="button"
+                    aria-label="Close sidebar"
+                    onClick={onClose}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 md:hidden"
                 >
-                  {ws.name}
+                    <X size={20} />
                 </button>
+            </div>
 
-                {/* 3-dot menu trigger */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
+            <div className="mt-6 px-2 sm:px-3">
+                <SidebarItem
+                    text="Workspaces"
+                    icon={
+                        <HiArrowTurnRightDown />
+                    }
+                />
+            </div>
 
-                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto px-2 pb-4 [scrollbar-width:thin] sm:px-3">
+                {renderWorkspaces()}
+            </div>
 
-                    setMenuPosition({
-                      top: rect.bottom + 6,
-                      left: rect.right - 200,
-                    });
+            <div className="shrink-0 border-t border-purple-100 px-3 py-3 sm:px-4 sm:py-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-cyan-600 to-purple-700 text-sm font-bold text-white">
+                        {getInitial(user?.name)}
+                    </div>
 
-                    setMenuOpenId(menuOpenId === ws._id ? null : ws._id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition"
-                >
-                  <MoreVertical size={18} className="text-gray-500 hover:text-purple-600" />
-                </button>
+                    <div className="min-w-0">
+                        <p className="text-xs text-gray-500">
+                            Hello
+                        </p>
 
+                        <p className="truncate text-sm font-semibold text-gray-800">
+                            {user?.name || "User"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
+    return (
+        <>
+            <AnimatePresence>
+                {mobileOpen && (
+                    <>
+                        <motion.div
+                            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] md:hidden"
+                            initial={{
+                                opacity: 0,
+                            }}
+                            animate={{
+                                opacity: 1,
+                            }}
+                            exit={{
+                                opacity: 0,
+                            }}
+                            onClick={onClose}
+                        />
 
-                {/* Dropdown menu */}
-                {menuOpenId === ws._id && (
-                  <WorkspaceMenuModal
-                    open
-                    position={menuPosition}
-                    onClose={() => setMenuOpenId(null)}
-                    workspaceName={ws.name}
-                    onAddCollaborator={() => handleAddCollaborator(ws)}
-                    onRemoveCollaborator={() => {
-                      setSelectedWorkspace(ws);
-                      setRemoveCollaborators(true);
-                    }}
-                    onDelete={() => handleDeleteWorkspace(ws._id, ws.name)}
-                  />
-
+                        <motion.aside
+                            className="fixed inset-y-0 left-0 z-50 w-[min(85vw,320px)] bg-gradient-to-br from-gray-50 to-white p-3 shadow-2xl md:hidden"
+                            initial={{
+                                x: "-100%",
+                            }}
+                            animate={{
+                                x: 0,
+                            }}
+                            exit={{
+                                x: "-100%",
+                            }}
+                            transition={{
+                                duration: 0.22,
+                                ease: "easeOut",
+                            }}
+                        >
+                            {sidebarContent}
+                        </motion.aside>
+                    </>
                 )}
+            </AnimatePresence>
 
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
+            <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 bg-gradient-to-br from-gray-50 to-white p-3 shadow-sm md:flex">
+                {sidebarContent}
+            </aside>
 
-      {/* Profile part */}
-      <div className="part-2 profile-part p-4 border-t-2 border-purple-800">
-        <div className="user-details flex items-center gap-3">
-          <div className="group relative circle w-[34px] h-[34px] bg-black rounded-full bg-gradient-to-t from-cyan-400 via-cyan-700 to-purple-700">
-            <span className="absolute opacity-0 inset-x-0 group-hover:opacity-100 transition-opacity duration-300 bottom-px bg-gradient-to-r from-transparent via-black to-transparent h-[3px] w-4/5 mx-auto blur-sm"></span>
-          </div>
-          <h1 className="text-xl ">Hello, {name}</h1>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Mobile sidebar drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black/40 z-40 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
+            <AddCollaboratorModal
+                open={addCollaboratorOpen}
+                onClose={() =>
+                    setAddCollaboratorOpen(false)
+                }
+                workspaceName={
+                    activeWorkspace?.name || ""
+                }
+                onSubmit={
+                    handleCollaboratorSubmit
+                }
             />
-            <motion.div
-              className="fixed top-0 left-0 bottom-0 w-64 bg-gradient-to-r from-gray-100 to-white z-50 md:hidden"
-              initial={{ x: -260 }}
-              animate={{ x: 0 }}
-              exit={{ x: -260 }}
-              transition={{ type: "tween", duration: 0.2 }}
-            >
-              {sidebarBody}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex h-screen bg-white py-4 px-2 w-64 lg:w-72 fixed left-0 top-0 z-40 bg-gradient-to-r from-gray-100 to-white">
-        {sidebarBody}
-      </div>
+            <ManageCollaboratorsModal
+                open={
+                    manageCollaboratorsOpen
+                }
+                onClose={() =>
+                    setManageCollaboratorsOpen(
+                        false
+                    )
+                }
+                workspace={
+                    activeWorkspace
+                }
+                onRemove={
+                    handleRemoveCollaborator
+                }
+            />
+        </>
+    );
+}
 
-      {/* Modals */}
-      <AddCollaboratorModal
-        open={addCollaboratorOpen}
-        onClose={() => setAddCollaboratorOpen(false)}
-        workspaceName={selectedWorkspace?.name || ""}
-        onSubmit={handleCollaboratorSubmit}
-      />
-      <ManageCollaboratorsModal
-        open={removeCollaborators}
-        onClose={() => setRemoveCollaborators(false)}
-        workspace={selectedWorkspace}
-        onRemove={handleRemoveCollaborator}
-      />
-    </>
-  );
+function getInitial(name?: string) {
+    return (
+        name?.trim().charAt(0).toUpperCase() ||
+        "U"
+    );
 }
